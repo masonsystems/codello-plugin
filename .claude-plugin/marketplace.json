@@ -10,8 +10,8 @@
     {
       "name": "codetogo",
       "source": "./plugin",
-      "description": "CodeToGo companion commands + skills: the codetogo:docs skill (answer how-to questions from codetogo.app/docs), the codetogo:cli skill (find/read sessions, map PTY ↔ agent ids, triage what's waiting), the codetogo:secrets skill (ask the user for a credential you need, without it entering the transcript), /codetogo:spawn (start titled sessions now, one per task), /codetogo:schedule (fire a pre-seeded session later), /codetogo:copy, the codetogo:quit skill (end the session when the task succeeds — \"reply and quit\"), plus the context-boundary set: /codetogo:handoff, /codetogo:resume, /codetogo:compact (in-place reset from a handoff), /codetogo:fresh (in-place reset with no handoff) and /codetogo:continue (after a /clear, pick up the conversation that ran in this session)",
-      "version": "1.8.0"
+      "description": "CodeToGo companion commands + skills: the codetogo:docs skill (answer how-to questions from codetogo.app/docs), the codetogo:cli skill (find/read sessions, map PTY ↔ agent ids, triage what's waiting), the codetogo:secrets skill (ask the user for a credential you need, without it entering the transcript), /codetogo:spawn (start titled sessions now, one per task), /codetogo:schedule (fire a pre-seeded session later), /codetogo:copy, the codetogo:quit skill (end the session when the task succeeds — \"reply and quit\"), the codetogo:done skill (report what the session's task ended as, so its row shows a check or an X), plus the context-boundary set: /codetogo:handoff, /codetogo:resume, /codetogo:compact (in-place reset from a handoff), /codetogo:fresh (in-place reset with no handoff) and /codetogo:continue (after a /clear, pick up the conversation that ran in this session)",
+      "version": "1.9.0"
     }
   ]
 }

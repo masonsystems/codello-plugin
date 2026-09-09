@@ -1,7 +1,7 @@
 {
   "name": "codetogo",
-  "version": "1.8.0",
-  "description": "CodeToGo companion commands and skills for Claude Code \u2014 answer how-to questions from the docs at codetogo.app, find and read sessions on this machine via the `codetogo` CLI, ask the user for an API key or other credential without it entering the conversation, spawn titled sessions now (one per task), schedule a pre-seeded session to fire later, copy rich text to the clipboard of the device viewing the session, quit the session once a task succeeds so the user never has to come back to it, and move work across a context boundary: hand off / resume, compact in place from a handoff, or swap in a fresh agent that picks the conversation up from its transcript.",
+  "version": "1.9.0",
+  "description": "CodeToGo companion commands and skills for Claude Code \u2014 answer how-to questions from the docs at codetogo.app, find and read sessions on this machine via the `codetogo` CLI, ask the user for an API key or other credential without it entering the conversation, spawn titled sessions now (one per task), schedule a pre-seeded session to fire later, copy rich text to the clipboard of the device viewing the session, quit the session once a task succeeds so the user never has to come back to it, report what a session's task ended as so its row shows a check or an X, and move work across a context boundary: hand off / resume, compact in place from a handoff, or swap in a fresh agent that picks the conversation up from its transcript.",
   "author": {
     "name": "Eric Mason"
   }
