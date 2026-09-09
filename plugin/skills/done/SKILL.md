@@ -1,18 +1,18 @@
 ---
 name: done
-description: "Report the outcome of the task this CodeToGo session was opened for — `codetogo done`, or `codetogo done --failed`. Run it at the end of a turn, and ONLY when nothing is left for the user in this session: no pull request awaiting their review, no follow-up they have to run, no question, no decision, nothing to check. The session's status indicator becomes a green check (done) or a red ✕ (failed), and a done session closes itself 24 hours later. Also `/codetogo:done`. Triggers: you finished everything you were asked to do and have nothing to hand back, or you ran out of ways to do it and have to report that you could not."
+description: "Report the outcome of the task this Codello session was opened for — `codello done`, or `codello done --failed`. Run it at the end of a turn, and ONLY when nothing is left for the user in this session: no pull request awaiting their review, no follow-up they have to run, no question, no decision, nothing to check. The session's status indicator becomes a green check (done) or a red ✕ (failed), and a done session closes itself 24 hours later. Also /codello:done. Triggers: you finished everything you were asked to do and have nothing to hand back, or you ran out of ways to do it and have to report that you could not."
 ---
 
 # Report what this session ended as
 
-`codetogo done` puts the outcome on the session's row, so the user learns what happened without opening it.
+`codello done` puts the outcome on the session's row, so the user learns what happened without opening it.
 
 ```bash
-codetogo done -m "Fixed the parser crash and merged the pull request."
+codello done -m "Fixed the parser crash and merged the pull request."
 ```
 
 ```bash
-codetogo done --failed -m "The staging database is unreachable, so the migration never ran."
+codello done --failed -m "The staging database is unreachable, so the migration never ran."
 ```
 
 The command arms the outcome and returns at once. It lands when the current turn ends, so run it and then write your reply as normal — that reply is what the user reads when they open the session.
@@ -21,7 +21,7 @@ The command arms the outcome and returns at once. It lands when the current turn
 
 This is the whole rule, and it is stricter than "I finished my part."
 
-Do **not** run `codetogo done` when any of these is true:
+Do **not** run `codello done` when any of these is true:
 
 - A pull request is open and waiting for the user to review, approve, or merge it.
 - There is a follow-up for them: a command to run, a credential to add, a setting to change, a deploy to approve.
@@ -41,8 +41,8 @@ Do not use `--failed` for work you merely have not finished yet, or for a task t
 
 | Command | Indicator | Push | Session |
 |---|---|---|---|
-| `codetogo done` | Green check | None — the check is there when they next look | Closes itself after 24 hours, unless the user opens it or types in it |
-| `codetogo done --failed` | Red ✕ | `Failed · <session>`, with your summary as the body | Stays open |
+| `codello done` | Green check | None — the check is there when they next look | Closes itself after 24 hours, unless the user opens it or types in it |
+| `codello done --failed` | Red ✕ | `Failed · <session>`, with your summary as the body | Stays open |
 
 Either outcome clears the moment the user types in the session, like any other indicator. A session blocked on a permission prompt or a question still reads as blocked — that outranks both.
 
@@ -62,8 +62,8 @@ Task reported as failed. When this turn ends the session is marked failed and yo
 
 Nothing is armed until that line prints. If the command prints anything else, report exactly what it said and end the turn normally:
 
-- `Not in a CodeToGo session`: CodeToGo did not spawn this PTY. Only a `codetogo claude` session, the web "new session" button, or a scheduled session can report an outcome.
-- `Server not running`: the CodeToGo server is down, so there is nothing to record the outcome.
+- `Not in a Codello session`: Codello did not spawn this PTY. Only a `codello claude` session, the web "new session" button, or a scheduled session can report an outcome.
+- `Server not running`: the Codello server is down, so there is nothing to record the outcome.
 
 ## Write the summary for a lock screen
 
@@ -83,4 +83,4 @@ Nothing is armed until that line prints. If the command prints anything else, re
 
 ## Related
 
-`/codetogo:quit` ends the session outright at the same boundary, leaving no record of an outcome. Use `done` when the user should still be able to open the session and read what happened; use `quit` when the user told you to go away and there is nothing worth coming back to.
+`/codello:quit` ends the session outright at the same boundary, leaving no record of an outcome. Use `done` when the user should still be able to open the session and read what happened; use `quit` when the user told you to go away and there is nothing worth coming back to.

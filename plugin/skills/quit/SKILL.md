@@ -1,13 +1,13 @@
 ---
 name: quit
-description: "End this CodeToGo session when the task you were given succeeds, so the user never has to come back to it — `codetogo quit`. Use when the user's instruction ends with a quit clause: \"reply and quit\", \"ship it and quit\", \"close the ticket then quit\", \"do X and then close this session\", \"quit when you're done\", \"I don't need to hear back\", \"just do it and go away\". Also `/codetogo:quit`. Quit ONLY on success: if anything failed, was skipped, or needs a decision from the user, finish with a normal report instead and leave the session open."
+description: "End this Codello session when the task you were given succeeds, so the user never has to come back to it — `codello quit`. Use when the user's instruction ends with a quit clause: \"reply and quit\", \"ship it and quit\", \"close the ticket then quit\", \"do X and then close this session\", \"quit when you're done\", \"I don't need to hear back\", \"just do it and go away\". Also /codello:quit. Quit ONLY on success: if anything failed, was skipped, or needs a decision from the user, finish with a normal report instead and leave the session open."
 ---
 
 # Quit the session when the task succeeds
 
 The user told you to do something and then quit. Do the thing, and if it fully succeeded, end the session so nothing is left for them to check.
 
-The session closes at the end of your turn, after your final reply is written, so the user can still read that reply later from the recently-closed list or `codetogo history`.
+The session closes at the end of your turn, after your final reply is written, so the user can still read that reply later from the recently-closed list or `codello history`.
 
 ## The rule: quit only on success
 
@@ -26,7 +26,7 @@ If any of those fails, do not quit. Write the report you would normally write, w
 Once the task has succeeded, run this as your **last tool call**, with `dangerouslyDisableSandbox: true` (the CLI talks to the local server on `127.0.0.1:3847`, which a sandboxed command cannot reach):
 
 ```bash
-codetogo quit
+codello quit
 ```
 
 Expect:
@@ -39,8 +39,8 @@ Then write a one- or two-line final reply naming what was done and where it live
 
 Nothing is armed until that line prints. If the command prints anything else, report exactly what it said and end the turn normally without quitting:
 
-- `Not in a CodeToGo session`: CodeToGo did not spawn this PTY. Only a `codetogo claude` session, the web "new session" button, or a scheduled session can quit itself; a bare `claude` that CodeToGo merely sees via hooks cannot.
-- `Server not running`: the CodeToGo server is down, so there is nothing to close the session. Finish normally.
+- `Not in a Codello session`: Codello did not spawn this PTY. Only a `codello claude` session, the web "new session" button, or a scheduled session can quit itself; a bare `claude` that Codello merely sees via hooks cannot.
+- `Server not running`: the Codello server is down, so there is nothing to close the session. Finish normally.
 
 ## What the user sees
 

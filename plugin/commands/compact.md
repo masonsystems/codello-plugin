@@ -1,19 +1,19 @@
 ---
-description: Reset THIS live CodeToGo session's context in place — like /compact, but a real process reset reseeded from a handoff
+description: Reset THIS live Codello session's context in place — like /compact, but a real process reset reseeded from a handoff
 argument-hint: "[handoff-path]"
 ---
 
-CodeToGo's counterpart to `/compact`. Where `/compact` summarizes the context *in place*
+Codello's counterpart to `/compact`. Where `/compact` summarizes the context *in place*
 (same polluted process, now with a summary on top), this does a **hard reset**: it replaces
-the `claude` process running under **this** CodeToGo session with a fresh one — same terminal
+the `claude` process running under **this** Codello session with a fresh one — same terminal
 pane, same session id, same viewers, same phone entry, same scrollback — reseeded from a
 handoff you write now. The "summary" is a curated handoff, and the reset is a **real new
 process** (context truly reset to near-zero). Reach for it when the context is *polluted*,
 not merely long.
 
-The swap fires at the next idle boundary — i.e. **when this turn ends** — via CodeToGo's
+The swap fires at the next idle boundary — i.e. **when this turn ends** — via Codello's
 Stop hook: this turn writes the handoff and arms the compact; the moment you finish, the old
-`claude` is killed and `claude /codetogo:resume <path>` takes its place under the same PTY.
+`claude` is killed and `claude /codello:resume <path>` takes its place under the same PTY.
 The client sees no reconnect, only new output.
 
 ## HARD RULE — this command is a stop order
@@ -32,13 +32,13 @@ extra tool call here adds a turn and spends the very tokens this command exists 
 ## 1. Precondition + handoff path + background inventory — ONE Bash call
 
 ```bash
-if [ -z "$CODETOGO_SESSION" ]; then echo "NOT a codetogo-owned session"; else ROOT="${CLAUDE_PROJECT_DIR:-}"; [ -z "$ROOT" ] && ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"; if [ -z "$ROOT" ]; then d="$PWD"; while [ "$d" != "/" ] && [ ! -d "$d/.claude" ]; do d=$(dirname "$d"); done; ROOT="$d"; fi; [ "$ROOT" = "/" ] && ROOT="$PWD"; mkdir -p "$ROOT/.claude/tmp"; echo "owned: $CODETOGO_SESSION"; echo "transcript: cc/$CLAUDE_CODE_SESSION_ID"; echo "handoff: $ROOT/.claude/tmp/HANDOFF.md"; echo; INV="${CLAUDE_PLUGIN_ROOT:-}/scripts/background-inventory.sh"; [ -f "$INV" ] || INV=$(find "$HOME/.claude/plugins" -maxdepth 7 -name background-inventory.sh -path "*codetogo*" 2>/dev/null | sort -V | tail -1); if [ -n "$INV" ] && [ -f "$INV" ]; then bash "$INV" | tee "$ROOT/.claude/tmp/background-inventory.md"; echo; echo "inventory: $ROOT/.claude/tmp/background-inventory.md"; else echo "_Background inventory script not found — list any monitors/background tasks you remember starting._"; fi; fi
+if [ -z "$CODELLO_SESSION" ]; then echo "NOT a Codello-owned session"; else ROOT="${CLAUDE_PROJECT_DIR:-}"; [ -z "$ROOT" ] && ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"; if [ -z "$ROOT" ]; then d="$PWD"; while [ "$d" != "/" ] && [ ! -d "$d/.claude" ]; do d=$(dirname "$d"); done; ROOT="$d"; fi; [ "$ROOT" = "/" ] && ROOT="$PWD"; mkdir -p "$ROOT/.claude/tmp"; echo "owned: $CODELLO_SESSION"; echo "transcript: cc/$CLAUDE_CODE_SESSION_ID"; echo "handoff: $ROOT/.claude/tmp/HANDOFF.md"; echo; INV="${CLAUDE_PLUGIN_ROOT:-}/scripts/background-inventory.sh"; [ -f "$INV" ] || INV=$(find "$HOME/.claude/plugins" -maxdepth 7 -name background-inventory.sh -path "*codello*" 2>/dev/null | sort -V | tail -1); if [ -n "$INV" ] && [ -f "$INV" ]; then bash "$INV" | tee "$ROOT/.claude/tmp/background-inventory.md"; echo; echo "inventory: $ROOT/.claude/tmp/background-inventory.md"; else echo "_Background inventory script not found — list any monitors/background tasks you remember starting._"; fi; fi
 ```
 
-This only works when CodeToGo spawned the PTY — a `codetogo claude` session, the web "new
-session" button, or a scheduled session. A bare `claude` that CodeToGo only sees via hooks
-is **not** swappable. If it prints `NOT a codetogo-owned session`, stop and tell the user
-this command only works inside a CodeToGo-managed session — there's nothing to reset.
+This only works when Codello spawned the PTY — a `codello claude` session, the web "new
+session" button, or a scheduled session. A bare `claude` that Codello only sees via hooks
+is **not** swappable. If it prints `NOT a Codello-owned session`, stop and tell the user
+this command only works inside a Codello-managed session — there's nothing to reset.
 
 The same call prints the **background inventory**: every `Monitor` and background `Bash`
 task this session started that never reported finishing. The swap kills the outgoing
@@ -49,7 +49,7 @@ into the handoff in step 2.
 
 ## 2. Write the handoff — from context only
 
-Write a complete `# Handoff: <title>` document (the format `/codetogo:handoff` defines) to
+Write a complete `# Handoff: <title>` document (the format `/codello:handoff` defines) to
 the `handoff:` path from step 1, built **entirely from what's already in your context**. Run
 nothing to gather state — the next agent can run `git status` itself for one cheap call; you
 re-deriving it now defeats the purpose. If you don't know something (exact diff state,
@@ -76,7 +76,7 @@ costs a silent failure nobody is watching for.
 
 If `$ARGUMENTS` is a path, the user already wrote/reviewed the handoff — skip this step and
 use that path instead. Their handoff predates the inventory, so if step 1 listed live tasks,
-append the file step 1 saved, from step 3's Bash call, before the `codetogo compact` line:
+append the file step 1 saved, from step 3's Bash call, before the `codello compact` line:
 
 ```bash
 cat "<root>/.claude/tmp/background-inventory.md" >> "<their-handoff-path>"
@@ -94,7 +94,7 @@ respawns in (a no-arg resume resolves the default path from cwd, which lands in 
 for a worktree session — COD-811). The resumed session deletes the baton after reading it:
 
 ```bash
-codetogo compact "<absolute-handoff-path>"
+codello compact "<absolute-handoff-path>"
 ```
 
 When the Bash sandbox is on, run this with `dangerouslyDisableSandbox: true` — the CLI talks to the local server on `127.0.0.1:3847`, which a sandboxed command can never reach. Nothing is armed until the line below prints, so don't end the turn on a failure here.
@@ -102,5 +102,5 @@ When the Bash sandbox is on, run this with `dangerouslyDisableSandbox: true` —
 Expect `Session compact armed.` Then **end your turn immediately** — one line to the user
 ("Handoff written, compact armed — resetting now."), no work summary, no follow-ups. The
 swap fires on the next Stop hook, so an in-flight turn is never killed. If it instead prints
-`Not in a CodeToGo session` or `Failed to arm session compact: …`, the step-1 precondition
+`Not in a Codello session` or `Failed to arm session compact: …`, the step-1 precondition
 wasn't actually met (or the server isn't running) — report exactly what it said and stop.

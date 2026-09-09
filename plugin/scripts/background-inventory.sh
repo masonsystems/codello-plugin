@@ -2,7 +2,7 @@
 # Inventory the background work started in THIS claude session, so a context
 # reset can restart what still matters.
 #
-# Why this exists: a /codetogo:compact swap kills the outgoing claude with
+# Why this exists: a `compact` swap kills the outgoing claude with
 # killProcessTree() (src/server/pty-manager.ts), so every Monitor and every
 # background Bash task dies with it, mid-flight. Claude Code's own /compact
 # leaves them running but stops delivering their notifications — measured at
