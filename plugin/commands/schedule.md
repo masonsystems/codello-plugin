@@ -15,7 +15,9 @@ A schedule fires in one of two modes:
   in the session list, the user can open it from a phone, and it can stop and ask a
   question or request a tool permission.
 - **Background** (`--background`) — a headless `claude -p` child process. No session
-  row, no viewer, and **no permission prompt is ever shown**. If the run needs a tool
+  row, no viewer, and **no permission prompt is ever shown**. A headless run starts
+  with nothing granted beyond reading: `Bash`, `Edit`, and `Write` are all denied
+  unless the working directory's settings allow them. If the run needs a tool
   permission that isn't already granted in that directory, the tool call is denied,
   the run is recorded as failed with the denied tool names, and the user gets a push
   and a bell notification. Results are read afterwards with `codetogo schedule runs`
@@ -70,19 +72,21 @@ Otherwise the user is describing **what** to do and **when**. Do this:
 
    Say which mode you picked and why, in one clause, when you report.
 
-3. **Before a background schedule, check the permissions it will need.** Nobody is
-   there to approve a tool at fire time, so a missing permission costs the whole run.
-   Work it out before you schedule, not after it fails:
+3. **Before a background schedule, settle its permissions.** Nobody is there to
+   approve a tool at fire time, and a headless run is granted nothing beyond reading
+   by default — `Bash`, `Edit`, and `Write` are denied unless the working directory's
+   settings allow them. A background schedule whose permissions you haven't settled
+   does nothing useful. Settle them here, not after the first run fails:
 
-   a. **Think about which tools the prompt actually requires.** Running a test suite
-      or a build needs `Bash` for that exact command. Editing, fixing, or generating
-      files needs `Edit` and `Write`. Reading a URL or an API needs `WebFetch` or
+   a. **Enumerate the tools the prompt needs, one by one.** Running a test suite or a
+      build needs `Bash` for that exact command. Editing, fixing, or generating files
+      needs `Edit` and `Write`. Reading a URL or an API needs `WebFetch` or
       `WebSearch`. Talking to a service through MCP needs that MCP tool. Committing,
-      pushing, or opening a PR needs `Bash(git …)` and `Bash(gh …)`. A read-only
-      audit that only greps the repo needs nothing beyond `Read`, `Grep`, and `Glob`,
-      which are always available.
+      pushing, or opening a PR needs `Bash(git …)` and `Bash(gh …)`. Only a read-only
+      task that greps and reads the repo needs nothing added: `Read`, `Grep`, and
+      `Glob` are available without an allow entry.
 
-   b. **Read the settings that apply in the target directory** and collect their
+   b. **Read the effective permission settings for that cwd** and collect their
       `permissions.allow` entries, noting `permissions.deny` too — a deny entry wins
       over any allow:
       ```bash
@@ -92,16 +96,28 @@ Otherwise the user is describing **what** to do and **when**. Do this:
       ```
       A missing file is normal; treat it as contributing nothing.
 
-   c. **If every tool the task needs is already allowed, schedule it.** If anything
-      it needs is missing or denied, **do not schedule**. Tell the user which
-      permissions are missing, give the exact entries to add and the file to add them
-      to, and offer to schedule it interactively instead — an interactive session can
-      ask, so it is the working answer for a task the user won't pre-authorize. For
-      example:
-      > `nightly-tests` needs `Bash(npm test:*)`, which isn't allowed in
-      > `~/src/app`. Add it to `~/src/app/.claude/settings.local.json` under
-      > `permissions.allow`, or I can schedule this as an interactive session that
-      > can ask you at run time.
+   c. **Take exactly one of three outcomes.**
+
+      - **Every tool the task needs is already allowed** — say so, naming the entries
+        that cover it, and go on to schedule.
+      - **Something is missing and could reasonably be granted** — propose the exact
+        `allow` entries and the file to put them in, then **ask the user to approve
+        adding them** and wait. Do not add a permission the user has not approved in
+        that turn, and do not schedule until the entries are in place. Once approved,
+        add them yourself, preserving the rest of the file:
+        ```
+        `nightly-tests` needs `Bash(npm test:*)` and `Bash(npx vitest:*)`, and neither
+        is allowed in ~/src/app. Add these two to permissions.allow in
+        ~/src/app/.claude/settings.local.json?
+        ```
+      - **A needed tool is denied outright**, or the user declines the allow entries —
+        **refuse to schedule the background run** and say which tool would be denied
+        and what that costs (the run fails and the work does not happen). Offer an
+        interactive schedule instead: an interactive session can ask at run time, so
+        it is the working answer for a task the user won't pre-authorize.
+
+      Never work around a missing permission. There is no bypass flag, and a
+      background run that is not allowed to do the work is not worth scheduling.
 
    Interactive schedules skip this step entirely: they can ask.
 

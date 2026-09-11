@@ -127,15 +127,17 @@ session row, no viewer, and no permission prompt of any kind. Unattended work �
 tests, audit the deps, sweep the PRs, "and tell me if anything broke" — goes to background;
 anything you'll want to steer stays interactive. Say which you want and that wins.
 
-Because a background run can never ask, the command **checks permissions before it
-schedules**. It works out which tools your prompt needs (a test run needs `Bash` for that
-command, an edit needs `Edit`/`Write`, a fetch needs `WebFetch`), reads `permissions.allow`
-and `permissions.deny` from `.claude/settings.json` and `.claude/settings.local.json` in the
-target directory and from `~/.claude/settings.json`, and refuses to schedule when something
-needed isn't granted — naming the exact allow entry to add, and offering an interactive
-schedule instead. A denied tool at fire time fails the run, and nobody is watching. For the
-same reason it writes background prompts that never ask a question and end with a one-line
-verdict.
+A headless run is granted nothing beyond reading: `Bash`, `Edit`, and `Write` are all denied
+unless the schedule's working directory allows them, and there is no bypass. So the command
+**settles permissions before it schedules**. It enumerates the tools your prompt needs (a
+test run needs `Bash` for that command, an edit needs `Edit`/`Write`, a fetch needs
+`WebFetch`), reads `permissions.allow` and `permissions.deny` from `.claude/settings.json`
+and `.claude/settings.local.json` in that directory and from `~/.claude/settings.json`, and
+then does one of three things: confirms everything is allowed and schedules, proposes the
+exact `allow` entries and asks you to approve adding them, or refuses the background
+schedule and names the tool that would be denied — offering an interactive schedule, which
+can ask you at run time, instead. For the same reason it writes background prompts that
+never ask a question and end with a one-line verdict.
 
 Read the results with `codetogo schedule runs` (add `-n <name>` for one schedule) or on the
 **Background runs** page in the app, which keeps each run's full transcript. A failed run
