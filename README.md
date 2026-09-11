@@ -15,7 +15,8 @@ door to the `codetogo` CLI:
 - **`/codetogo:spawn`** — start fresh, titled sessions *now*, one per task, in any project
   directory — driveable from your phone the moment they start.
 - **`/codetogo:schedule`** — schedule a fresh, pre-seeded Claude Code session to fire later
-  on your own dev machine.
+  on your own dev machine, interactively or as a headless background run whose permissions
+  are checked before it's scheduled.
 - **`/codetogo:handoff`** · **`/codetogo:resume`** — write a handoff another agent (or a
   fresh session) can pick up, and resume from one.
 - **`/codetogo:compact`** — reset a *live* CodeToGo session's context in place: like
@@ -116,6 +117,31 @@ that dir's files/tools/creds but has **no memory** of the chat that created it, 
 prompt is always written to be self-contained. The directory must be a trusted Claude
 project (open Claude there once and accept the trust dialog), and `codetogo` must be
 running for the schedule to fire.
+
+### Background runs
+
+A schedule fires in one of two modes, and the command picks one for you: **interactive**,
+a normal session in the list that you can open from your phone and that can stop to ask
+you something, or **background** (`--background`), a headless `claude -p` child with no
+session row, no viewer, and no permission prompt of any kind. Unattended work — run the
+tests, audit the deps, sweep the PRs, "and tell me if anything broke" — goes to background;
+anything you'll want to steer stays interactive. Say which you want and that wins.
+
+A headless run is granted nothing beyond reading: `Bash`, `Edit`, and `Write` are all denied
+unless the schedule's working directory allows them, and there is no bypass. So the command
+**settles permissions before it schedules**. It enumerates the tools your prompt needs (a
+test run needs `Bash` for that command, an edit needs `Edit`/`Write`, a fetch needs
+`WebFetch`), reads `permissions.allow` and `permissions.deny` from `.claude/settings.json`
+and `.claude/settings.local.json` in that directory and from `~/.claude/settings.json`, and
+then does one of three things: confirms everything is allowed and schedules, proposes the
+exact `allow` entries and asks you to approve adding them, or refuses the background
+schedule and names the tool that would be denied — offering an interactive schedule, which
+can ask you at run time, instead. For the same reason it writes background prompts that
+never ask a question and end with a one-line verdict.
+
+Read the results with `codetogo schedule runs` (add `-n <name>` for one schedule) or on the
+**Background runs** page in the app, which keeps each run's full transcript. A failed run
+sends a push and rings the bell.
 
 ## Quit when done
 

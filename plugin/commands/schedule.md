@@ -5,9 +5,23 @@ allowed-tools: Bash
 ---
 
 You are the front door to `codetogo schedule`. A scheduled run launches a **fresh**
-`claude "<prompt>"` session on this machine, in a chosen directory, at a cron or
-one-shot time — it inherits the real files/tools/creds of that dir but has **no
-memory of this conversation**, so the prompt you write must be fully self-contained.
+Claude Code run on this machine, in a chosen directory, at a cron or one-shot time —
+it inherits the real files/tools/creds of that dir but has **no memory of this
+conversation**, so the prompt you write must be fully self-contained.
+
+A schedule fires in one of two modes:
+
+- **Interactive** (the default) — a `claude "<prompt>"` session in a PTY. It shows up
+  in the session list, the user can open it from a phone, and it can stop and ask a
+  question or request a tool permission.
+- **Background** (`--background`) — a headless `claude -p` child process. No session
+  row, no viewer, and **no permission prompt is ever shown**. A headless run starts
+  with nothing granted beyond reading: `Bash`, `Edit`, and `Write` are all denied
+  unless the working directory's settings allow them. If the run needs a tool
+  permission that isn't already granted in that directory, the tool call is denied,
+  the run is recorded as failed with the denied tool names, and the user gets a push
+  and a bell notification. Results are read afterwards with `codetogo schedule runs`
+  or on the **Background runs** page, which shows each run's full transcript.
 
 `$ARGUMENTS` is the user's request. Handle three shapes:
 
@@ -19,7 +33,12 @@ If `$ARGUMENTS` is "list" (or empty and the user clearly wants to see schedules)
 codetogo schedule list
 ```
 
-Show the output and stop.
+Show the output and stop. To show what past background runs did instead, use:
+
+```bash
+codetogo schedule runs            # every background run, newest first
+codetogo schedule runs -n <name>  # just this schedule's runs
+```
 
 ## 2. Remove
 
@@ -40,16 +59,78 @@ Otherwise the user is describing **what** to do and **when**. Do this:
    ```
    Use that as `--cwd` unless the user named a different directory.
 
-2. **Derive a short kebab-case name** from the task (e.g. "nightly review" →
+2. **Choose the mode: background or interactive.** The user's explicit ask wins —
+   "in the background", "headless", "don't open a session" means `--background`;
+   "I want to drive it", "open a session I can talk to" means interactive. With no
+   explicit ask, pick from the nature of the task:
+   - **Background** when the task is unattended by nature and produces a result
+     rather than a conversation: run the tests, audit dependencies, sweep the open
+     PRs, check a feed, write a report, "and notify me if anything is broken".
+   - **Interactive** when the user will want to steer the session, or the task
+     obviously has to ask something: triage and decide, draft something for review,
+     fix whatever the failure turns out to be, anything open-ended.
+
+   Say which mode you picked and why, in one clause, when you report.
+
+3. **Before a background schedule, settle its permissions.** Nobody is there to
+   approve a tool at fire time, and a headless run is granted nothing beyond reading
+   by default — `Bash`, `Edit`, and `Write` are denied unless the working directory's
+   settings allow them. A background schedule whose permissions you haven't settled
+   does nothing useful. Settle them here, not after the first run fails:
+
+   a. **Enumerate the tools the prompt needs, one by one.** Running a test suite or a
+      build needs `Bash` for that exact command. Editing, fixing, or generating files
+      needs `Edit` and `Write`. Reading a URL or an API needs `WebFetch` or
+      `WebSearch`. Talking to a service through MCP needs that MCP tool. Committing,
+      pushing, or opening a PR needs `Bash(git …)` and `Bash(gh …)`. Only a read-only
+      task that greps and reads the repo needs nothing added: `Read`, `Grep`, and
+      `Glob` are available without an allow entry.
+
+   b. **Read the effective permission settings for that cwd** and collect their
+      `permissions.allow` entries, noting `permissions.deny` too — a deny entry wins
+      over any allow:
+      ```bash
+      cat <dir>/.claude/settings.json
+      cat <dir>/.claude/settings.local.json
+      cat ~/.claude/settings.json
+      ```
+      A missing file is normal; treat it as contributing nothing.
+
+   c. **Take exactly one of three outcomes.**
+
+      - **Every tool the task needs is already allowed** — say so, naming the entries
+        that cover it, and go on to schedule.
+      - **Something is missing and could reasonably be granted** — propose the exact
+        `allow` entries and the file to put them in, then **ask the user to approve
+        adding them** and wait. Do not add a permission the user has not approved in
+        that turn, and do not schedule until the entries are in place. Once approved,
+        add them yourself, preserving the rest of the file:
+        ```
+        `nightly-tests` needs `Bash(npm test:*)` and `Bash(npx vitest:*)`, and neither
+        is allowed in ~/src/app. Add these two to permissions.allow in
+        ~/src/app/.claude/settings.local.json?
+        ```
+      - **A needed tool is denied outright**, or the user declines the allow entries —
+        **refuse to schedule the background run** and say which tool would be denied
+        and what that costs (the run fails and the work does not happen). Offer an
+        interactive schedule instead: an interactive session can ask at run time, so
+        it is the working answer for a task the user won't pre-authorize.
+
+      Never work around a missing permission. There is no bypass flag, and a
+      background run that is not allowed to do the work is not worth scheduling.
+
+   Interactive schedules skip this step entirely: they can ask.
+
+4. **Derive a short kebab-case name** from the task (e.g. "nightly review" →
    `nightly-review`). Keep it unique and stable.
 
-3. **Parse the "when"** into either:
+5. **Parse the "when"** into either:
    - a 5-field cron expression for recurring runs (e.g. "every day at 9am" →
      `0 9 * * *`, "weekdays at 8" → `0 8 * * 1-5`), or
    - an ISO date/time for a one-shot (e.g. "tomorrow at 3pm" →
      `2026-06-17T15:00`). Compute the absolute date from today if needed.
 
-4. **Write a self-contained prompt to a temp file.** The scheduled Claude has no
+6. **Write a self-contained prompt to a temp file.** The scheduled Claude has no
    memory of this chat, so spell out the full task, the repo/dir context, and what
    "done" looks like. NEVER inline the prompt through shell quoting — write it to a
    file and pass `--prompt-file`:
@@ -59,26 +140,40 @@ Otherwise the user is describing **what** to do and **when**. Do this:
    PROMPT
    ```
 
-5. **Validate with `--dry-run`** (checks the cwd is a trusted Claude dir, parses the
-   trigger, prints the computed next-fire time — saves nothing):
+   **A background prompt is written for nobody watching.** Say so in the prompt
+   itself: never ask the user a question, never wait for input, and choose a
+   reasonable default instead of pausing on an ambiguity. Tell it to finish with a
+   short result line saying whether the task succeeded or failed and what the outcome
+   was — that line is what the user reads first in the run's transcript. A background
+   prompt that ends with "let me know if you want me to…" has wasted the run.
+
+7. **Validate with `--dry-run`** (checks the cwd is a trusted Claude dir, parses the
+   trigger, prints the computed next-fire time and the mode — saves nothing):
    ```bash
    codetogo schedule add --dry-run \
      --name <name> --cwd "<dir>" --at "<cron|ISO>" \
+     [--background] \
      --prompt-file /tmp/ctg-schedule-prompt.txt
    ```
 
-6. **Save it — do not ask the user to confirm.** If the dry run parsed cleanly, run
+8. **Save it — do not ask the user to confirm.** If the dry run parsed cleanly, run
    the real command immediately (same flags, no `--dry-run`):
    ```bash
    codetogo schedule add \
      --name <name> --cwd "<dir>" --at "<cron|ISO>" \
+     [--background] \
      --prompt-file /tmp/ctg-schedule-prompt.txt
    ```
-   Then report what was scheduled: name, next run in the user's local zone, cwd, and
-   a one-line summary of the prompt. A schedule is trivially reversible with
-   `codetogo schedule remove <name>`, so a confirmation round trip buys nothing.
-   Only stop and ask if the dry run fails, or the request is genuinely ambiguous
-   about *what* to run — never merely to confirm a time you already parsed.
+   Then report: the name, the next run in the user's local zone, the cwd, whether it
+   is **background or interactive**, a one-line summary of the prompt, and where the
+   result will show up. For a background schedule, that last part is: `codetogo
+   schedule runs` or the **Background runs** page, where the transcript is readable,
+   and a push plus a bell if the run fails.
+
+   A schedule is trivially reversible with `codetogo schedule remove <name>`, so a
+   confirmation round trip buys nothing. Only stop and ask if the dry run fails, if
+   the request is genuinely ambiguous about *what* to run, or if a background run is
+   missing a permission (step 3) — never merely to confirm a time you already parsed.
 
 ### Notes
 
@@ -86,7 +181,9 @@ Otherwise the user is describing **what** to do and **when**. Do this:
 - If `--dry-run` reports the dir isn't a trusted Claude project, tell the user to
   open Claude there once and accept the trust dialog — a scheduled run in an
   untrusted dir hangs at the trust prompt and never delivers the prompt.
-- The server must be running (`codetogo start`) for the schedule to fire.
+- The server must be running (`codetogo start`) for the schedule to fire, and for
+  background runs to be recorded — `codetogo schedule runs` reads them from the
+  running server.
 - Pass `--prompt-file` an **absolute path that `codetogo` itself can read**. If a
   sandbox redirected your `$TMPDIR`, the path you wrote to is not the path an
   unsandboxed `codetogo` resolves, and the add fails with `ENOENT`. Write the file,
