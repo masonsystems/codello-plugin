@@ -49,12 +49,16 @@ Otherwise the user is describing **what** to do and **when**. Do this:
    - an ISO date/time for a one-shot (e.g. "tomorrow at 3pm" →
      `2026-06-17T15:00`). Compute the absolute date from today if needed.
 
-4. **Write a self-contained prompt to a temp file.** The scheduled Claude has no
-   memory of this chat, so spell out the full task, the repo/dir context, and what
-   "done" looks like. NEVER inline the prompt through shell quoting — write it to a
-   file and pass `--prompt-file`:
+4. **Write a self-contained prompt to a file in your scratchpad directory.** The
+   scheduled Claude has no memory of this chat, so spell out the full task, the
+   repo/dir context, and what "done" looks like. NEVER inline the prompt through
+   shell quoting — write it to a file and pass `--prompt-file`. Put the file in the
+   session scratchpad directory the harness gives you (the `Scratchpad directory:`
+   path in your environment block), never in the project tree and never in `/tmp`:
+   a file inside the repo shows up in `git status`, trips permission prompts, and
+   risks being committed, and `/tmp` is not the same path under a sandbox.
    ```bash
-   cat > /tmp/ctg-schedule-prompt.txt <<'PROMPT'
+   cat > "<scratchpad>/ctg-schedule-prompt.txt" <<'PROMPT'
    <the full, self-contained prompt>
    PROMPT
    ```
@@ -64,7 +68,7 @@ Otherwise the user is describing **what** to do and **when**. Do this:
    ```bash
    codetogo schedule add --dry-run \
      --name <name> --cwd "<dir>" --at "<cron|ISO>" \
-     --prompt-file /tmp/ctg-schedule-prompt.txt
+     --prompt-file "<scratchpad>/ctg-schedule-prompt.txt"
    ```
 
 6. **Save it — do not ask the user to confirm.** If the dry run parsed cleanly, run
@@ -72,7 +76,7 @@ Otherwise the user is describing **what** to do and **when**. Do this:
    ```bash
    codetogo schedule add \
      --name <name> --cwd "<dir>" --at "<cron|ISO>" \
-     --prompt-file /tmp/ctg-schedule-prompt.txt
+     --prompt-file "<scratchpad>/ctg-schedule-prompt.txt"
    ```
    Then report what was scheduled: name, next run in the user's local zone, cwd, and
    a one-line summary of the prompt. A schedule is trivially reversible with
@@ -87,9 +91,10 @@ Otherwise the user is describing **what** to do and **when**. Do this:
   open Claude there once and accept the trust dialog — a scheduled run in an
   untrusted dir hangs at the trust prompt and never delivers the prompt.
 - The server must be running (`codetogo start`) for the schedule to fire.
-- Pass `--prompt-file` an **absolute path that `codetogo` itself can read**. If a
-  sandbox redirected your `$TMPDIR`, the path you wrote to is not the path an
-  unsandboxed `codetogo` resolves, and the add fails with `ENOENT`. Write the file,
-  then pass the real absolute path you can `ls`.
+- Pass `--prompt-file` an **absolute path that `codetogo` itself can read**. The
+  scratchpad path is already absolute and outside any sandbox redirect. If you
+  used `$TMPDIR` instead and a sandbox redirected it, the path you wrote to is not
+  the path an unsandboxed `codetogo` resolves, and the add fails with `ENOENT`.
+  Write the file, then pass the real absolute path you can `ls`.
 - Add `--tz <IANA>` (e.g. `America/Chicago`) only if the user wants a zone other
   than this machine's.
