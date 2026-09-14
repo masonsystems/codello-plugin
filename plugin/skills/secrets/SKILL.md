@@ -11,14 +11,13 @@ When you need a credential to continue, ask for it directly. The user gets a mas
 codetogo secret request --reason "Running the deploy script"
 ```
 
-The command blocks until the user answers, then prints the path on its own line:
+The command blocks until the user answers, then prints the path as its last line:
 
 ```
-Got the secret. Read it, use it, then delete the file:
 /Users/eric/.codetogo/uploads/<session>/secrets/<id>-secret
 ```
 
-Read the file, put the value where it belongs, and delete the file:
+Move the value where it belongs with shell substitution, then delete the file. Never open the file with a tool, print the value, or repeat it back:
 
 ```bash
 SECRET_PATH="$(codetogo secret request --reason "Deploy needs it" | tail -1)"
