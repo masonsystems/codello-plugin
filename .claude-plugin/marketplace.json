@@ -1,17 +1,17 @@
 {
-  "name": "codetogo-marketplace",
+  "name": "codello-marketplace",
   "owner": {
     "name": "Eric Mason"
   },
   "metadata": {
-    "description": "CodeToGo plugins for Claude Code"
+    "description": "Codello plugins for Claude Code"
   },
   "plugins": [
     {
-      "name": "codetogo",
+      "name": "codello",
       "source": "./plugin",
-      "description": "CodeToGo companion commands + skills: the codetogo:docs skill (answer how-to questions from codetogo.app/docs), the codetogo:cli skill (find/read sessions, map PTY ↔ agent ids, triage what's waiting), the codetogo:secrets skill (ask the user for a credential you need, without it entering the transcript), /codetogo:spawn (start titled sessions now, one per task), /codetogo:schedule (fire a pre-seeded session later), /codetogo:copy, the codetogo:quit skill (end the session when the task succeeds — \"reply and quit\"), the codetogo:done skill (report what the session's task ended as, so its row shows a check or an X), plus the context-boundary set: /codetogo:handoff, /codetogo:resume, /codetogo:compact (in-place reset from a handoff), /codetogo:fresh (in-place reset with no handoff) and /codetogo:continue (after a /clear, pick up the conversation that ran in this session)",
-      "version": "1.9.0"
+      "description": "Codello companion commands + skills: the codello:docs skill (answer how-to questions from codello.app/docs), the codello:cli skill (find/read sessions, map PTY ↔ agent ids, triage what's waiting), the codello:secrets skill (ask the user for a credential you need, without it entering the transcript), /codello:spawn (start titled sessions now, one per task), /codello:schedule (fire a pre-seeded session later), /codello:copy, the codello:quit skill (end the session when the task succeeds — \"reply and quit\"), the codello:done skill (report what the session's task ended as, so its row shows a check or an X), plus the context-boundary set: /codello:handoff, /codello:resume, /codello:compact (in-place reset from a handoff), /codello:fresh (in-place reset with no handoff) and /codello:continue (after a /clear, pick up the conversation that ran in this session)",
+      "version": "2.0.0"
     }
   ]
 }

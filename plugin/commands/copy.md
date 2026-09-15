@@ -1,11 +1,11 @@
 ---
-description: Copy content to the clipboard of the phone or browser viewing this CodeToGo session, as rich text — bold, bullets, tables, and monospace survive a paste into Gmail, Docs, or Slack. Use when the user wants to paste something from this session on their device.
+description: Copy content to the clipboard of the phone or browser viewing this Codello session, as rich text — bold, bullets, tables, and monospace survive a paste into Gmail, Docs, or Slack. Use when the user wants to paste something from this session on their device.
 argument-hint: <content to copy> (or omit to copy what was just discussed)
 allowed-tools: Bash
 ---
 
 Put `$ARGUMENTS` on the clipboard of whatever device is **viewing this session** — the
-user's phone, or a browser tab at https://codetogo.app — formatted as rich text so a paste
+user's phone, or a browser tab at https://codello.app — formatted as rich text so a paste
 into Gmail/Docs/Slack keeps the formatting instead of arriving as a wall of asterisks.
 
 This is the remote twin of a local "copy to clipboard": the agent runs on the dev machine,
@@ -16,7 +16,7 @@ clipboard (browsers only allow a clipboard write inside a real user gesture).
 If `$ARGUMENTS` is empty, copy the thing just produced or discussed — a draft email, a
 summary, a table, a command. Ask only if that's genuinely ambiguous.
 
-**Write plain markdown, not HTML.** `codetogo copy --md` converts it to Gmail-safe HTML for
+**Write plain markdown, not HTML.** `codello copy --md` converts it to Gmail-safe HTML for
 you — inlining every style, matching Gmail's own font, and using a styled span for monospace
 because Gmail strips `<code>`. Getting those rules right by hand costs you ~2.4x the tokens
 and gets them subtly wrong in ways that only show up after a paste.
@@ -29,11 +29,11 @@ second turn for no benefit, since the heredoc already preserves the bytes exactl
 ## Write and push it — one call
 
 ```bash
-f=$(mktemp /tmp/codetogo-copy-XXXXXX)
+f=$(mktemp /tmp/codello-copy-XXXXXX)
 cat > "$f" <<'CTG_MD'
 …markdown body…
 CTG_MD
-codetogo copy --md "$f" --source "<short label>"; rc=$?; rm -f "$f"; exit $rc
+codello copy --md "$f" --source "<short label>"; rc=$?; rm -f "$f"; exit $rc
 ```
 
 Four things in that snippet are load-bearing:
@@ -47,7 +47,7 @@ Four things in that snippet are load-bearing:
   clobber each other's file.
 - **No `.md` suffix on the template.** BSD `mktemp` (the macOS default) only substitutes the
   `X`s when they're at the very END of the template — `…-XXXXXX.md` yields the *literal*
-  filename `codetogo-copy-XXXXXX.md`, silently losing the randomization above. The CLI
+  filename `codello-copy-XXXXXX.md`, silently losing the randomization above. The CLI
   doesn't care about the extension, so leave it off.
 - **`rm -f` runs after the push, and `rc` preserves the exit code** so a failed push still
   fails the command instead of being masked by the successful `rm`.
@@ -102,18 +102,18 @@ phone or in a browser, then run it again.
 ### Notes
 
 - **When the Bash sandbox is on, run the push with `dangerouslyDisableSandbox: true`.** The CLI talks to the local server on `127.0.0.1:3847`, which a sandboxed command can never reach.
-- Must run **inside** a CodeToGo session — the CLI reads `CODETOGO_SESSION`. Outside one it
-  exits with "Not in a CodeToGo session"; pass `--session <id>` to target a specific one.
-- If the CLI errors with **`unknown option '--md'`**, the installed CodeToGo predates the
-  markdown converter — tell the user to run `codetogo upgrade`, then retry.
+- Must run **inside** a Codello session — the CLI reads `CODELLO_SESSION`. Outside one it
+  exits with "Not in a Codello session"; pass `--session <id>` to target a specific one.
+- If the CLI errors with **`unknown option '--md'`**, the installed Codello predates the
+  markdown converter — tell the user to run `codello upgrade`, then retry.
 - If the success line says `N line(s) of text` rather than `of rich text`, the running
-  daemon predates the rich flavor and dropped it — tell the user to run `codetogo restart`
+  daemon predates the rich flavor and dropped it — tell the user to run `codello restart`
   and try again.
 - `--md` does not read stdin, and `--md` with `--html` is an error (they're two spellings of
   the same flavor). Use the temp file.
 - 128 KB limit across both flavors. For anything larger, point the user at the file instead
   of pasting it.
-- Plain text is fine too: `codetogo copy "some text"` or `codetogo copy --file <path>` skips
+- Plain text is fine too: `codello copy "some text"` or `codello copy --file <path>` skips
   the rich flavor entirely. Reach for `--md` when formatting is the point.
 - The chip stays until the user copies or dismisses it, so this works even if their phone is
   in their pocket right now.

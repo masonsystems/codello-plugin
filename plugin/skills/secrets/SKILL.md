@@ -1,6 +1,6 @@
 ---
 name: secrets
-description: "Ask the user for an API key, token, password, or any other credential you need to finish a task — `codetogo secret request`. Use this INSTEAD of telling the user to paste a key into the chat, put one in a file, or edit .env themselves: they are usually on a phone and cannot edit files, and a key pasted into the conversation is recorded permanently in the transcript, the terminal scrollback, and the logs. Triggers: you encounter a missing ANTHROPIC_API_KEY / OPENAI_API_KEY / GITHUB_TOKEN / AWS credential / database password / .env value, a command fails with 401 or 403 or \"not authenticated\", a setup step needs a credential you do not have, or you are about to write \"please add your key to\" anything."
+description: "Ask the user for an API key, token, password, or any other credential you need to finish a task — `codello secret request`. Use this INSTEAD of telling the user to paste a key into the chat, put one in a file, or edit .env themselves: they are usually on a phone and cannot edit files, and a key pasted into the conversation is recorded permanently in the transcript, the terminal scrollback, and the logs. Triggers: you encounter a missing ANTHROPIC_API_KEY / OPENAI_API_KEY / GITHUB_TOKEN / AWS credential / database password / .env value, a command fails with 401 or 403 or \"not authenticated\", a setup step needs a credential you do not have, or you are about to write \"please add your key to\" anything."
 ---
 
 # Ask the user for a secret
@@ -8,7 +8,7 @@ description: "Ask the user for an API key, token, password, or any other credent
 When you need a credential to continue, ask for it directly. The user gets a masked field on whatever device they are holding, pastes the value, and you get back a file path.
 
 ```bash
-codetogo secret request --reason "Running the deploy script"
+codello secret request --reason "Running the deploy script"
 ```
 
 The command blocks until the user answers, then prints the path on its own line:
@@ -21,7 +21,7 @@ Got the secret. Read it, use it, then delete the file:
 Read the file, put the value where it belongs, and delete the file:
 
 ```bash
-SECRET_PATH="$(codetogo secret request --reason "Deploy needs it" | tail -1)"
+SECRET_PATH="$(codello secret request --reason "Deploy needs it" | tail -1)"
 printf 'ANTHROPIC_API_KEY=%s\n' "$(cat "$SECRET_PATH")" >> .env
 rm -f "$SECRET_PATH"
 ```
@@ -29,7 +29,7 @@ rm -f "$SECRET_PATH"
 You can add a few words saying what you want, and they are shown to the user:
 
 ```bash
-codetogo secret request "the Stripe test key" --reason "Charging a test card"
+codello secret request "the Stripe test key" --reason "Charging a test card"
 ```
 
 ## Rules

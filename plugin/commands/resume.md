@@ -1,9 +1,9 @@
 ---
-description: Resume work from a handoff written by /codetogo:handoff (also what an in-place context reset re-seeds into)
+description: Resume work from a handoff written by `handoff` (also what an in-place context reset re-seeds into)
 argument-hint: "[path]"
 ---
 
-Pick up work from a handoff. This is also the command a `/codetogo:compact` swap re-seeds the
+Pick up work from a handoff. This is also the command a `compact` swap re-seeds the
 fresh `claude` process with, so keep it robust.
 
 ## 1. Load the handoff
@@ -19,12 +19,12 @@ Resolve in priority order:
    user points you at it explicitly.
 
 Handoffs are **not** auto-loaded — a new session picks one up only when you run
-`/codetogo:resume` (optionally with a path). Read the whole document.
+`resume` (optionally with a path). Read the whole document.
 
 ## 2. Delete the handoff if it's the one-shot baton — before any work
 
-A handoff at `.claude/tmp/HANDOFF.md` is a **one-shot baton**: `/codetogo:handoff` writes there,
-and a `/codetogo:compact` swap re-seeds this session by pointing `/codetogo:resume` at that exact
+A handoff at `.claude/tmp/HANDOFF.md` is a **one-shot baton**: `handoff` writes there,
+and a `compact` swap re-seeds this session by pointing `resume` at that exact
 path. So the instant you've read it, delete it — right now, before summarizing, before touching
 code — **whether you loaded it by default (no arg) or via an explicit `$ARGUMENTS` path**. Its
 content is already in your context; a lingering `.claude/tmp/HANDOFF.md` is the #1 cause of

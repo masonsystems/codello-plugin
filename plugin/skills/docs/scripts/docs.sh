@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fetch https://codetogo.app/docs and answer questions from it.
+# Fetch https://codello.app/docs and answer questions from it.
 #
 #   docs.sh index              section headings with their #anchors
 #   docs.sh search <terms...>  case-insensitive grep with context (terms ORed)
@@ -12,7 +12,7 @@
 # go stale against a deploy.
 set -euo pipefail
 
-DOCS_URL="${CODETOGO_DOCS_URL:-https://codetogo.app/docs}"
+DOCS_URL="${CODELLO_DOCS_URL:-https://codello.app/docs}"
 
 fetch_text() {
   curl -fsSL --max-time 20 "$DOCS_URL" | perl -0777 -pe '
