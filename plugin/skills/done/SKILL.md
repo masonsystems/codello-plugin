@@ -83,4 +83,4 @@ Nothing is armed until that line prints. If the command prints anything else, re
 
 ## Related
 
-`/codello:quit` ends the session outright at the same boundary, leaving no record of an outcome. Use `done` when the user should still be able to open the session and read what happened; use `quit` when the user told you to go away and there is nothing worth coming back to.
+`/codello:quit` ends the session outright at the same boundary, leaving no record of an outcome. Use `/codello:done` when the user should still be able to open the session and read what happened; use `/codello:quit` when the user told you to go away and there is nothing worth coming back to.

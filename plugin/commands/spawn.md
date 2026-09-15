@@ -13,7 +13,7 @@ It has **no memory of this conversation**, so each prompt must be fully self-con
 
 ## When to use this (vs. team agents / subagents)
 
-- **Use `spawn`** when the user is expected to interact with the new sessions
+- **Use `/codello:spawn`** when the user is expected to interact with the new sessions
   directly, or when the tasks aren't really part of this session's work — e.g. a
   task-organization session kicking off independent agents across several projects.
   Each spawned session is a first-class, user-visible session of its own.
