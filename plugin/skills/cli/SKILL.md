@@ -23,6 +23,7 @@ codello sessions --json
     "shortId": "b6899618",
     "state": "working",
     "rawState": "tool_execution",
+    "detectorState": "tool_execution",
     "displayName": "Qa brenda",
     "cwd": "/Users/eric/src/hourglass",
     "agentSessionId": "f077f7c8-f298-4792-b0ae-35c6dfb2c9ec",
@@ -151,8 +152,11 @@ the only way to see client-side logs).
 
 `state` is a derived, coarse verdict — use it, not `rawState`, for decisions:
 
-- `working` — actively thinking/streaming/running a tool.
-- `waiting-on-you` — a permission prompt or a fired attention signal. **Act on this.**
+- `working` — actively thinking/streaming/running a tool, compacting, parked on a
+  running subagent (`rawState: working_subagent`), or parked on background tasks it
+  will resume from on its own (`rawState: idle_background`). Leave it alone.
+- `waiting-on-you` — a permission prompt, an open AskUserQuestion
+  (`rawState: awaiting_input`), or a fired attention signal. **Act on this.**
 - `blocked-on-you` — finished its turn on an unanswered question. Silent otherwise, so
   this is the one that hides sessions stuck since Friday.
 - `idle` — at a prompt, nothing pending.
@@ -160,6 +164,11 @@ the only way to see client-side logs).
 - `unknown` — **no detector for this session**, not "fine". Its state was wiped (e.g. by
   a server restart) and nothing has re-established it, so it may well be parked on
   something. Don't report `unknown` as idle.
+
+`rawState` is the same projected state the Codello app draws its status dot from, so the
+CLI and the phone always agree. `detectorState` is the host's state detector before that
+projection (`idle` under `working_subagent` or `idle_background`, `tool_execution` under
+`awaiting_input`); it is for diagnosis only, and is `null` from a host that predates it.
 
 `stateSinceIso` is the last state *change* (null = never transitioned), not the time of
 your call — so "working for 4 hours" is a real, computable signal. It is **UTC**; convert
