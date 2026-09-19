@@ -180,6 +180,24 @@ codello copy --md notes.md --session <pty-id>   # ...or aim it at another sessio
 `snooze` is for when you've armed a wait Codello can't see — a cron, a CI run, a promised
 follow-up — so the session doesn't sit in the user's list looking like it needs them.
 
+The commands that report on the task itself also target this session implicitly, and each
+has its own skill with the rules for when to run it:
+
+```bash
+codello session-status set waiting -m "Review PR #12"   # this turn ends needing the user (skill: waiting)
+codello session-status clear                             # the wait ended without them replying
+codello done -m "Merged the retry fix"                   # finished, nothing left for the user (skill: done)
+codello done --failed -m "Staging DB unreachable"        # could not be done (skill: done)
+codello quit                                             # the user said "do X and quit" and X succeeded (skill: quit)
+codello secret request --reason "Deploy needs the key"   # ask for a credential without it entering the chat (skill: secrets)
+```
+
+`session-status set waiting` exists because a session with a `Monitor`, a background
+`Bash`, or a dev server still running reads as `working` to every inference above, so a
+turn that ends on "PR ready for review" is never surfaced. The declaration outranks the
+inference (`state` becomes `waiting-on-you`), carries the `-m` line as `declaredMessage`,
+and is retired by the user's reply, `clear`, or `done`.
+
 Outside a Codello session `CODELLO_SESSION` is unset and these exit 1 with "Not in a
 Codello session" — that's the honest answer, not a bug to work around. `copy` is the one
 exception: `--session <pty-id>` overrides the env var, so it works from anywhere.
