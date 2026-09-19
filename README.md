@@ -37,6 +37,14 @@ door to the `codello` CLI:
 - **`codello:done` skill** (also `/codello:done`) — the agent reports what the task ended as,
   so the session's row shows a green check or a red ✕ and you learn the outcome without
   opening it. It runs only when nothing is left for you in that session.
+- **`codello:waiting` skill** (also `/codello:waiting`) — the agent declares that the session
+  is waiting on you and what for (a PR to review, a question, a permission, a blocker), so the
+  row shows the needs-you dot with that line even while a monitor or background task of the
+  agent's keeps the session looking busy. It clears the declaration when the wait ends.
+- **SessionStart hook** — in a Codello session, a few lines of context at session start
+  name the commands an agent is expected to run on its own (`done`, `done --failed`, `quit`,
+  `session-status set waiting` / `clear`, `secret request`) and point at the skill for each.
+  Outside a Codello session the hook prints nothing.
 
 ## Prerequisites
 
@@ -159,6 +167,34 @@ when the task cannot be completed as asked. The session's row shows a green chec
 a one-line summary, a failure sends you a push, and a done session closes itself after 24 hours
 unless you open it or type in it. The same rule as quit applies: an open pull request, a follow-up,
 a question, or a decision means the session ends with an ordinary report instead.
+
+## Say the session is waiting on you
+
+An agent that ends a turn on something only you can do runs
+`codello session-status set waiting -m "<what you have to do>"`. Codello infers a session's
+state from hooks, and a session with a `Monitor`, a background task, or a dev server still
+running reads as busy no matter what the agent's reply says, so before this the wait was
+invisible until you opened the session. The declaration outranks the inference: the row shows
+the needs-you dot with the agent's line, you get one push carrying it, and nothing the agent
+does afterward moves it. Your reply retires it, as do dismissing the session from the
+dashboard, `codello session-status clear`, and `codello done`. The skill tells the agent to set it for a PR awaiting review, a question or
+decision, a permission it cannot grant, or a blocker only you can clear, to clear it when the
+wait ends another way, and never to run it in the same turn as `done`.
+
+Cursor sessions cannot declare a status (no Stop hook fires the declaration); Claude Code and
+Codex sessions can.
+
+## What every agent is told at session start
+
+The plugin ships a `SessionStart` hook (`hooks/hooks.json`, `scripts/session-start.sh`). Inside
+a Codello session it adds a few lines of context naming the commands the agent is expected to
+run on its own and when: `done` and `done --failed`, `quit`, `session-status set waiting` and
+`clear`, and `secret request`, each pointing at its skill. This is the deterministic layer:
+skills load when Claude Code decides they are relevant, and on a machine with many skills a
+new one can rank too low to be offered, so the hook makes sure the commands are named even
+when no skill loads. It is a no-op when `CODELLO_SESSION` (or the older `CODETOGO_SESSION`)
+is unset or `codello` is not on `PATH`, so the plugin adds nothing to an unrelated Claude
+session.
 
 ## Handoff, resume & compact
 
