@@ -58,12 +58,16 @@ codello start
 
 ## Install
 
-In Claude Code:
+The Codello CLI ships this plugin and passes it to every Claude Code session it spawns or resumes, so a session started from Codello already has it, at the version that matches the running CLI. You don't need to install anything for those sessions. If you installed the marketplace copy earlier, `codello doctor` tells you it is no longer needed and prints the uninstall command; the bundled copy takes precedence either way.
+
+Install from the marketplace only for Claude Code sessions that Codello did not start, where the `codello:docs` and `codello:cli` skills are still useful. In Claude Code:
 
 ```
 /plugin marketplace add masonsystems/codello-plugin
 /plugin install codello@codello-marketplace
 ```
+
+The marketplace copy updates only when its version bumps, so it can trail the CLI. Codello sessions never depend on it.
 
 ## Upgrading from codetogo
 
