@@ -37,6 +37,9 @@ door to the `codello` CLI:
 - **`codello:done` skill** (also `/codello:done`) — the agent reports what the task ended as,
   so the session's row shows a green check or a red ✕ and you learn the outcome without
   opening it. It runs only when nothing is left for you in that session.
+- **`codello:session-status` skill** — the opposite case: the agent says the session is
+  waiting on *you*, when Codello cannot work that out for itself because a background task,
+  a Monitor, or a hosted server is still running and reads as the agent being busy.
 
 ## Prerequisites
 
@@ -159,6 +162,19 @@ when the task cannot be completed as asked. The session's row shows a green chec
 a one-line summary, a failure sends you a push, and a done session closes itself after 24 hours
 unless you open it or type in it. The same rule as quit applies: an open pull request, a follow-up,
 a question, or a decision means the session ends with an ordinary report instead.
+
+## Say when the session is waiting on you
+
+Codello reads a session's state off Claude Code's hooks, and that reading has one blind spot: a
+turn that ends needing you while something the agent started is still running looks exactly like
+a turn about to resume itself. A session hosting a follow-up board and re-arming an hourly watcher
+waited five hours with no dot and no push.
+
+An agent in that position now runs `codello session-status set waiting -m "<what you have to do>"`.
+The session shows the needs-you dot with that line on its row and sends you one push. The
+declaration survives everything the agent does next — the hourly watcher firing does not take the
+dot down and does not buzz you a second time. Your reply clears it, as do `codello session-status
+clear` and `codello done`.
 
 ## Handoff, resume & compact
 
