@@ -176,8 +176,8 @@ state from hooks, and a session with a `Monitor`, a background task, or a dev se
 running reads as busy no matter what the agent's reply says, so before this the wait was
 invisible until you opened the session. The declaration outranks the inference: the row shows
 the needs-you dot with the agent's line, you get one push carrying it, and nothing the agent
-does afterward moves it. Your reply retires it, as do `codello session-status clear` and
-`codello done`. The skill tells the agent to set it for a PR awaiting review, a question or
+does afterward moves it. Your reply retires it, as do dismissing the session from the
+dashboard, `codello session-status clear`, and `codello done`. The skill tells the agent to set it for a PR awaiting review, a question or
 decision, a permission it cannot grant, or a blocker only you can clear, to clear it when the
 wait ends another way, and never to run it in the same turn as `done`.
 

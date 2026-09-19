@@ -23,7 +23,9 @@ Run it in the turn that leaves something only the user can do, before you write 
 - A blocker only they can clear: an environment you cannot reach, an account you do not have, a change on a system outside your access.
 - You are handing back a **Blocker** or **Decision needed** item.
 
-One declaration per wait. A second `set` in a later turn replaces the first; it never stacks a second push.
+One declaration per wait. A second `set` replaces the line on the row and sends another push, so declare once and declare again only when what the user has to do has changed, or when a declaration was dropped.
+
+The declaration fires at the end of the turn. If the user types before the turn ends, the armed declaration is dropped: no dot, no push, because their message may already be the answer. If that message did not answer you, declare again in the next turn.
 
 ## When to clear it
 
@@ -32,7 +34,7 @@ Run `codello session-status clear` when the wait ends without the user typing in
 - The thing you were waiting for arrived another way: the PR got merged, CI finished, the blocker went away, a background task delivered what you needed.
 - You are about to keep working on your own after all.
 
-You do not need to clear it when the user replies. Their message, typed in the terminal or sent from the phone, retires the declaration on its own, and so does `codello done`. If the next user message arrives and you still need something, declare again in that turn.
+You do not need to clear it when the user replies. Their message, typed in the terminal or sent from the phone, retires the declaration on its own, and so do `codello done` and the user dismissing the session from the dashboard. If the next user message arrives and you still need something, declare again in that turn.
 
 ## Never in the same turn as done
 
