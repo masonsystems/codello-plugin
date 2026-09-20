@@ -9,6 +9,12 @@ The user told you to do something and then quit. Do the thing, and if it fully s
 
 The session closes at the end of your turn, after your final reply is written, so the user can still read that reply later from the recently-closed list or `codello history`.
 
+## Only the session's lead agent runs this
+
+If another agent spawned you — as a subagent, a Task delegate, or a teammate — this command is not yours to run. You share the lead agent's session, so it reports the user's whole session rather than your piece of the work, and it does that while the lead is still working.
+
+Report your result to the agent that spawned you and let it decide what the session ended as. The host refuses a delegate's report with `You are a delegate agent (a subagent or teammate), not this session's lead.` If you see that line, hand your result back instead.
+
 ## The rule: quit only on success
 
 "Quit" is conditional on the whole task working. Before you arm it, every one of these must be true:
