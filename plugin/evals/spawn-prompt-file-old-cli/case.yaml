@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: spawn-prompt-file-old-cli
+context:
+  scaffold_script: fixture.sh

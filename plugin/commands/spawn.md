@@ -55,18 +55,36 @@ It has **no memory of this conversation**, so each prompt must be fully self-con
    command-line argument, so don't paste large file contents into it; point the
    new session at the files to read instead.
 
-4. **Spawn** with `--prompt-file` (detaches immediately; the first stdout line is the
-   full session id):
+   Start the prompt with a line of plain text, not a `-` list item or `---`
+   frontmatter, so no CLI reads its first line as an option.
+
+4. **Check the CLI once** per invocation, before the first spawn:
+   ```bash
+   codello spawn --help | grep -c -- --prompt-file
+   ```
+   A count of 1 or more means this CLI has `--prompt-file`; 0 means it predates it.
+
+5. **Spawn** (detaches immediately; the first stdout line is the full session id).
+   When the CLI has `--prompt-file`:
    ```bash
    cd "<dir>" && codello spawn -n "<title>" --prompt-file "<scratchpad>/ctg-spawn-<slug>.txt" claude
    ```
    `--prompt-file` reads the file itself, so no shell substitution can turn a missing
    file into an empty prompt; a missing or empty file makes the spawn fail instead.
-   Never pass the prompt as `"$(cat <file>)"`. If a spawn went wrong anyway, close
-   just that session with `codello stop <session-id>`; bare `codello stop` stops the
-   whole server and every session on it.
 
-5. **Repeat** for each remaining task, then report one line per session — title,
+   Only when the check printed 0, pass the same scratchpad file by substitution:
+   ```bash
+   cd "<dir>" && codello spawn -n "<title>" claude "$(cat "<scratchpad>/ctg-spawn-<slug>.txt")"
+   ```
+   This is safe only because the file is in the scratchpad, which is the same
+   directory inside and outside the sandbox. Never substitute a `$TMPDIR` or `/tmp`
+   path: outside the sandbox it reads a different directory, the substitution comes
+   back empty, and an older CLI starts `claude` with no prompt.
+
+   If a spawn went wrong, close just that session with `codello stop <session-id>`;
+   bare `codello stop` stops the whole server and every session on it.
+
+6. **Repeat** for each remaining task, then report one line per session — title,
    directory, short session id — and that they're live in the user's session list.
 
 If the task split or a target directory is genuinely ambiguous, show the plan and ask
@@ -75,9 +93,9 @@ first; otherwise spawn without asking — starting quickly is the point.
 ### Notes
 
 - **When the Bash sandbox is on, run the spawn with `dangerouslyDisableSandbox: true`.** The CLI talks to the local server on `127.0.0.1:3847`, which a sandboxed command can never reach.
-- `--prompt-file` needs a Codello CLI new enough to have it. On an older CLI the spawn
-  fails with `unknown option '--prompt-file'`; tell the user to run `codello upgrade`
-  rather than falling back to `"$(cat <file>)"`.
+- `codello stop <session-id>` needs the same CLI that has `--prompt-file`. On an
+  older CLI, `codello stop` with any argument tries to stop the whole server; close
+  the session from the app instead.
 - The server auto-starts if it isn't running; the user must have logged in once
   (`codello login`).
 - Each directory should be a trusted Claude project (open Claude there once and accept

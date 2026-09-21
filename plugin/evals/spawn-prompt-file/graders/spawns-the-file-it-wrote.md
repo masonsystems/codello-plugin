@@ -1,5 +1,5 @@
 ---
 type: regex
 target: trace
-pattern: 'scratchpad/([\w.-]+)\\?"[\s\S]*codello spawn.{0,300}?--prompt-file.{0,40}?scratchpad/\1'
+pattern: '"file_path\\?"\s*:\s*\\?"[^"\\]*scratchpad/([\w.-]+)\\?"[\s\S]*codello spawn.{0,300}?--prompt-file\s+(?:\\*")?[^"\\\s]*scratchpad/\1'
 ---
