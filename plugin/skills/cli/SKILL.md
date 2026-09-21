@@ -239,8 +239,12 @@ pre-compact agent id can still be resolved to a project.
   a session someone is using. `codello connect` **attaches your terminal to a live PTY**
   and, with no argument, auto-selects when there's exactly one session — never reach for
   it to "just look"; `tail` is the read.
-- **Never run `codello stop`** to fix something. It kills every PTY on the machine and
-  cuts the user off from their phone. `codello restart` preserves sessions.
+- **Never run bare `codello stop`** to fix something. It kills every PTY on the machine
+  and cuts the user off from their phone. `codello restart` preserves sessions. To close
+  one session, run `codello stop <session-id>` (full id or unique prefix): it closes only
+  that session, which stays reopenable from the app. It needs a CLI whose
+  `codello spawn --help` lists `--prompt-file`; an older CLI reads the id as a request to
+  stop the server.
 - **`codello logs` reads *production* by default** even while you're testing elsewhere;
   each line carries a `prod`/`stg` badge. Tag the environment before drawing conclusions.
 - **`sessions --json` exits 1 with `{"error":"server-not-running"}`** when the server is
