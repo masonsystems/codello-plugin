@@ -13,6 +13,12 @@ codello session-status set waiting -m "PR ready for review: https://github.com/o
 
 The command arms the declaration and returns at once. It fires when the current turn ends, exactly as `codello done` does: the session row shows the needs-you dot with your `-m` line, and one push goes out carrying the same line. Nothing you do afterward moves it, not a watcher firing, not the turn that watcher starts.
 
+## Only the session's lead agent runs this
+
+If another agent spawned you — as a subagent, a Task delegate, or a teammate — this command is not yours to run. You share the lead agent's session, so it reports the user's whole session rather than your piece of the work, and it does that while the lead is still working.
+
+Report your result to the agent that spawned you and let it decide what the session ended as. The host refuses a delegate's report with `You are a delegate agent (a subagent or teammate), not this session's lead.` If you see that line, hand your result back instead.
+
 ## When to set it
 
 Run it in the turn that leaves something only the user can do, before you write the reply:

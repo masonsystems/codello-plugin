@@ -17,6 +17,12 @@ codello done --failed -m "The staging database is unreachable, so the migration 
 
 The command arms the outcome and returns at once. It lands when the current turn ends, so run it and then write your reply as normal — that reply is what the user reads when they open the session.
 
+## Only the session's lead agent runs this
+
+If another agent spawned you — as a subagent, a Task delegate, or a teammate — this command is not yours to run. You share the lead agent's session, so it reports the user's whole session rather than your piece of the work, and it does that while the lead is still working.
+
+Report your result to the agent that spawned you and let it decide what the session ended as. The host refuses a delegate's report with `You are a delegate agent (a subagent or teammate), not this session's lead.` If you see that line, hand your result back instead.
+
 ## Done means nothing is left for the user
 
 This is the whole rule, and it is stricter than "I finished my part."
