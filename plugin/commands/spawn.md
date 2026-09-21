@@ -37,22 +37,34 @@ It has **no memory of this conversation**, so each prompt must be fully self-con
    auth test"). The session list shows `<dir-basename>: <title>`, so don't repeat the
    project name. Passing a title locks it — auto-naming won't overwrite it.
 
-3. **Prompt.** Write a fully self-contained prompt to a temp file — the full task,
-   any context the fresh session can't infer from the directory, and what "done"
-   looks like. NEVER inline it through shell quoting:
+3. **Prompt.** Write a fully self-contained prompt to a file in **your session
+   scratchpad directory** (Claude Code names it in your environment as "Scratchpad
+   directory") — the full task, any context the fresh session can't infer from the
+   directory, and what "done" looks like. Use the Write tool, or a quoted heredoc:
    ```bash
-   cat > /tmp/ctg-spawn-<slug>.txt <<'CTG_PROMPT_END'
+   cat > "<scratchpad>/ctg-spawn-<slug>.txt" <<'CTG_PROMPT_END'
    <the full, self-contained prompt>
    CTG_PROMPT_END
    ```
+   **Never stage it in `$TMPDIR` or `/tmp`.** The spawn runs with the sandbox off,
+   and the sandbox points `$TMPDIR` at a different directory than the unsandboxed
+   shell does, so a file written there in one call is missing in the other. The
+   scratchpad path is the same inside and outside the sandbox. If you have no
+   scratchpad directory, write the file with the sandbox off too.
    Keep the prompt a brief (a few KB at most) — it is passed to `claude` as a
    command-line argument, so don't paste large file contents into it; point the
    new session at the files to read instead.
 
-4. **Spawn** (detaches immediately; the first stdout line is the full session id):
+4. **Spawn** with `--prompt-file` (detaches immediately; the first stdout line is the
+   full session id):
    ```bash
-   cd "<dir>" && codello spawn -n "<title>" claude "$(cat /tmp/ctg-spawn-<slug>.txt)"
+   cd "<dir>" && codello spawn -n "<title>" --prompt-file "<scratchpad>/ctg-spawn-<slug>.txt" claude
    ```
+   `--prompt-file` reads the file itself, so no shell substitution can turn a missing
+   file into an empty prompt; a missing or empty file makes the spawn fail instead.
+   Never pass the prompt as `"$(cat <file>)"`. If a spawn went wrong anyway, close
+   just that session with `codello stop <session-id>`; bare `codello stop` stops the
+   whole server and every session on it.
 
 5. **Repeat** for each remaining task, then report one line per session — title,
    directory, short session id — and that they're live in the user's session list.
@@ -63,6 +75,9 @@ first; otherwise spawn without asking — starting quickly is the point.
 ### Notes
 
 - **When the Bash sandbox is on, run the spawn with `dangerouslyDisableSandbox: true`.** The CLI talks to the local server on `127.0.0.1:3847`, which a sandboxed command can never reach.
+- `--prompt-file` needs a Codello CLI new enough to have it. On an older CLI the spawn
+  fails with `unknown option '--prompt-file'`; tell the user to run `codello upgrade`
+  rather than falling back to `"$(cat <file>)"`.
 - The server auto-starts if it isn't running; the user must have logged in once
   (`codello login`).
 - Each directory should be a trusted Claude project (open Claude there once and accept
