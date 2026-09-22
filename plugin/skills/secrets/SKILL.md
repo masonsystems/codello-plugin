@@ -43,7 +43,9 @@ GITHUB_TOKEN="$(codello secret get GITHUB_TOKEN)" gh pr create --fill
 curl -H "Authorization: Bearer $(codello secret get STRIPE_TEST_KEY)" https://api.stripe.com/v1/balance
 ```
 
-`codello secret get` writes the raw value to stdout and nothing else. It exits 1 when this session does not hold the name, and refuses with exit 2 when stdout is a terminal, so run it only inside `$(…)`.
+`codello secret get` writes the raw value to stdout and nothing else. It exits 1 when this session does not hold the name. Run it only inside `$(…)`.
+
+It refuses with exit 2 when stdout is a terminal, but that protects only a person typing at one. Your Bash tool runs commands with stdout on a pipe, so a bare `codello secret get NAME` from you is not refused: it prints the value into the transcript. Nothing stops that except the rule below.
 
 ## When the value is wrong
 
