@@ -189,6 +189,7 @@ codello session-status clear                             # the wait ended withou
 codello done -m "Merged the retry fix"                   # finished, nothing left for the user (skill: done)
 codello done --failed -m "Staging DB unreachable"        # could not be done (skill: done)
 codello quit                                             # the user said "do X and quit" and X succeeded (skill: quit)
+codello emergency -m "Prod API 500s; rolled back, failing" # harm happening now you cannot contain; any agent (skill: emergency)
 codello secret list                                      # names of the credentials this session holds (skill: secrets)
 codello secret request GITHUB_TOKEN --reason "Deploy"    # ask for a credential without it entering the chat (skill: secrets)
 TOKEN="$(codello secret get GITHUB_TOKEN)"               # use a held credential; only ever inside $(…) (skill: secrets)
