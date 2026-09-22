@@ -43,9 +43,15 @@ door to the `codello` CLI:
   is waiting on you and what for (a PR to review, a question, a permission, a blocker), so the
   row shows the needs-you dot with that line even while a monitor or background task of the
   agent's keeps the session looking busy. It clears the declaration when the wait ends.
+- **`codello:emergency` skill** (also `/codello:emergency`) — any agent in the session, a
+  subagent or teammate included, sends you a Time Sensitive push at once and turns the session
+  red when it finds harm happening now that it cannot contain: a production outage, data loss,
+  leaked credentials, a destructive action gone wrong, or runaway cost. Never for ordinary
+  blockers or questions. Needs a `codello` CLI with the `emergency` command.
 - **SessionStart hook** — in a Codello session, a few lines of context at session start
   name the commands an agent is expected to run on its own (`done`, `done --failed`, `quit`,
-  `session-status set waiting` / `clear`, `secret request`) and point at the skill for each.
+  `session-status set waiting` / `clear`, `secret request`, `emergency`) and point at the skill
+  for each.
   Outside a Codello session the hook prints nothing.
 
 ## Prerequisites
@@ -186,12 +192,30 @@ wait ends another way, and never to run it in the same turn as `done`.
 Cursor sessions cannot declare a status (no Stop hook fires the declaration); Claude Code and
 Codex sessions can.
 
+## Raise an emergency
+
+An agent that finds harm happening now and cannot fix or contain it itself runs
+`codello emergency -m "<what is broken and its impact; what it did>"`: a production outage, data
+loss or corruption, leaked credentials, a destructive action that went wrong, or runaway cost,
+whether the agent caused it or found it. You get a Time Sensitive push on your phone and desktop
+at once, and the session turns red. Unlike `done` and `session-status`, any agent in the session
+may run it, including a subagent or teammate, and it fires immediately rather than at the end of
+the turn. The server sends at most one push per session in any 5 minutes; a repeat inside that
+window only replaces the message on the red row. That limit is held in memory, so a host restart
+resets it. The red status stays up until you type in the session, bring it on screen after it was
+off screen, mark it read, select an answer, snooze it, or press Esc in it; a reconnect or a
+`codello restart` does not clear it. A message over 500 characters is cut to the first 500, and
+the CLI tells the agent so. The skill tells the
+agent to contain what it safely can first, raise the alert once, keep working on mitigation, and
+never use it for blockers, questions, failing tests, or finished work. The `emergency` command
+ships in the `codello` CLI ([COD-1655](https://linear.app/masonsystems/issue/COD-1655/let-an-agent-raise-an-emergency-alert-with-codello-emergency)).
+
 ## What every agent is told at session start
 
 The plugin ships a `SessionStart` hook (`hooks/hooks.json`, `scripts/session-start.sh`). Inside
 a Codello session it adds a few lines of context naming the commands the agent is expected to
 run on its own and when: `done` and `done --failed`, `quit`, `session-status set waiting` and
-`clear`, and `secret request`, each pointing at its skill. This is the deterministic layer:
+`clear`, `secret request`, and `emergency`, each pointing at its skill. This is the deterministic layer:
 skills load when Claude Code decides they are relevant, and on a machine with many skills a
 new one can rank too low to be offered, so the hook makes sure the commands are named even
 when no skill loads. It is a no-op when `CODELLO_SESSION` (or the older `CODETOGO_SESSION`)
