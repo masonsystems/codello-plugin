@@ -201,8 +201,11 @@ whether the agent caused it or found it. You get a Time Sensitive push on your p
 at once, and the session turns red. Unlike `done` and `session-status`, any agent in the session
 may run it, including a subagent or teammate, and it fires immediately rather than at the end of
 the turn. The server sends at most one push per session in any 5 minutes; a repeat inside that
-window only replaces the message on the red row. The red status stays up until you open, select,
-type in, mark read, snooze, or press Esc in the session. The skill tells the
+window only replaces the message on the red row. That limit is held in memory, so a host restart
+resets it. The red status stays up until you type in the session, bring it on screen after it was
+off screen, mark it read, select an answer, snooze it, or press Esc in it; a reconnect or a
+`codello restart` does not clear it. A message over 500 characters is cut to the first 500, and
+the CLI tells the agent so. The skill tells the
 agent to contain what it safely can first, raise the alert once, keep working on mitigation, and
 never use it for blockers, questions, failing tests, or finished work. The `emergency` command
 ships in the `codello` CLI ([COD-1655](https://linear.app/masonsystems/issue/COD-1655/let-an-agent-raise-an-emergency-alert-with-codello-emergency)).
