@@ -14,7 +14,9 @@ door to the `codello` CLI:
   the page doesn't cover yet.
 - **`codello:secrets` skill** (no slash command — loads itself when relevant) — asks you for
   an API key, token, or password on whatever device you are holding, in a masked field, so
-  the value never enters the transcript, the scrollback, or the logs.
+  the value never enters the transcript, the scrollback, or the logs. The server keeps it in
+  memory until the session closes, so the agent asks once and reads it back with
+  `codello secret get`.
 - **`/codello:spawn`** — start fresh, titled sessions *now*, one per task, in any project
   directory — driveable from your phone the moment they start.
 - **`/codello:schedule`** — schedule a fresh, pre-seeded Claude Code session to fire later
