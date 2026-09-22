@@ -89,7 +89,8 @@ Anything else means no push went out. Put the emergency at the top of your reply
 - `Not in a Codello session`: Codello did not spawn this PTY, so there is no session to alert from. Do not mention the command or its error.
 - `Server not running. Start with: codello start` or `Failed to connect to server`: the Codello server is down or unreachable, so it cannot send the push. Say that the alert did not go out.
 - `Failed to raise the emergency: <reason>`: the host refused it or is older than this command. Say that the alert did not go out.
-- `An emergency needs a message: ...`: `-m` was missing or empty. Run it again with a message.
+- `error: required option '-m, --message <text>' not specified`: you left out `-m`. Run it again with a message.
+- `An emergency needs a message: ...`: `-m` was empty or only whitespace. Run it again with a message.
 - `error: unknown command 'emergency'`: this `codello` CLI predates the command. Say that the alert did not go out.
 
 ## Options
