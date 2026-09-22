@@ -21,7 +21,7 @@ Report your result to the agent that spawned you and let it decide what the sess
 
 ## When to set it
 
-Run it in the turn that leaves something only the user can do, before you write the reply:
+Run it silently in the turn that leaves something only the user can do, before you write the final reply. Never mention the command or the status in the reply: "I've marked this session as waiting on your answer" tells the user nothing they need. Set it when:
 
 - A pull request is open and needs their review, approval, or merge.
 - You asked a question, or a decision is theirs to make.
@@ -48,7 +48,7 @@ You do not need to clear it when the user replies. Their message, typed in the t
 
 ## Write the message for a lock screen
 
-`-m` is one line, read on a phone, out of context, possibly hours later. Say what the user has to do and name the thing: "Review and merge codello-plugin PR #12, the waiting skill" or "Approve the gh pr create permission" beats "Waiting on you".
+`-m` is the push the user reads, and the only one: your reply does not reach their lock screen. It is one line, read on a phone, out of context, possibly hours later, so put the substance of what you need from them in it. Say what the user has to do and name the thing: "Review and merge codello-plugin PR #12, the waiting skill" or "Approve the gh pr create permission" beats "Waiting on you".
 
 ## Running it
 
