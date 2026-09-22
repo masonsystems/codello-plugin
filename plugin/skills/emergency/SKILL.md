@@ -11,7 +11,9 @@ description: "Raise an emergency alert to the user now — `codello emergency -m
 codello emergency -m "Prod API returning 500s since my deploy of abc123; rolled back, still failing"
 ```
 
-The command sends a Time Sensitive push to the user's phone and desktop immediately, which breaks through Focus modes, and marks the session red on every device. Your turn keeps going.
+The command sends a Time Sensitive push to the user's phone and desktop immediately, which breaks through Focus modes, and gives the session a red emergency status on every device. A snoozed session wakes up. Your turn keeps going.
+
+The red status stays up while you keep working. Your own tool calls, a compact, and `codello session-status clear` do not take it down. It clears only when the user engages with the session: they open or select it, type in it, mark it read, snooze it, or press Esc in it.
 
 ## Only for harm that is happening now
 
@@ -41,11 +43,11 @@ Unlike `done` and `session-status`, this command is not reserved for the session
 
 ## Raise it once
 
-The server sends at most one push per session every 5 minutes. A second `codello emergency` inside that window sends no push, so do not repeat it to add detail or to escalate. Put the detail in your reply. Raise it again only for a different emergency after the window has passed.
+The host sends at most one push per session in any 5 minutes, counted from the last push that went out. A second `codello emergency` inside that window sends no push: it only replaces the message on the red session row. Run it again only when the situation changes, such as when the harm spreads or your mitigation fails, and put the rest of the detail in your reply. Never repeat it to escalate; a repeat inside the window cannot reach the user's phone.
 
 ## Write the message for a lock screen
 
-`-m` is the push body, read on a lock screen by someone who does not know what you were doing. Keep it under about 150 characters.
+`-m` is the push body, read on a lock screen by someone who does not know what you were doing. Keep it under about 150 characters so it fits on a lock screen; the host keeps at most 500. `-m` is required, and an empty message is refused.
 
 - **Start with what is broken and its impact.** "Prod API returning 500s" or "Deleted 4,000 customer rows in the prod database", not "I ran a migration".
 - **Then say what you did about it.** "rolled back, still failing" or "stopped the job, no backup found".
@@ -66,10 +68,29 @@ codello emergency -m "Nightly export job looping on prod, ~\$40/min in Bedrock c
 
 Run the command with `dangerouslyDisableSandbox: true`. The CLI talks to the local server on `127.0.0.1:3847`, which a sandboxed command cannot reach.
 
-If the command prints an error, no push went out. Put the emergency at the top of your reply in plain words either way:
+The alert went out when the command prints:
+
+```
+Emergency raised. The user was sent a Time Sensitive push, and the session shows a red emergency status until they open it.
+Keep working to contain the damage; run this again only if the situation changes.
+```
+
+A repeat inside the 5-minute window prints this instead, with the wait until another push is allowed:
+
+```
+Emergency updated. The session still shows the emergency with your new message.
+No push was sent: this session already sent one in the last 5 minutes. Another push is allowed in 3m 20s.
+```
+
+That is not a failure: the user already got a push for this session, and the row now shows your new message. Do not retry to get the push through.
+
+Anything else means no push went out. Put the emergency at the top of your reply in plain words either way:
 
 - `Not in a Codello session`: Codello did not spawn this PTY, so there is no session to alert from. Do not mention the command or its error.
-- `Server not running`: the Codello server is down, so it cannot send the push. Say that the alert did not go out.
+- `Server not running. Start with: codello start` or `Failed to connect to server`: the Codello server is down or unreachable, so it cannot send the push. Say that the alert did not go out.
+- `Failed to raise the emergency: <reason>`: the host refused it or is older than this command. Say that the alert did not go out.
+- `An emergency needs a message: ...`: `-m` was missing or empty. Run it again with a message.
+- `error: unknown command 'emergency'`: this `codello` CLI predates the command. Say that the alert did not go out.
 
 ## Options
 
