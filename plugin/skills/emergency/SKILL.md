@@ -13,7 +13,7 @@ codello emergency -m "Prod API returning 500s since my deploy of abc123; rolled 
 
 The command sends a Time Sensitive push to the user's phone and desktop immediately, which breaks through Focus modes, and gives the session a red emergency status on every device. A snoozed session wakes up. Your turn keeps going.
 
-The red status stays up while you keep working. Your own tool calls, a compact, and `codello session-status clear` do not take it down. It clears only when the user engages with the session: they open or select it, type in it, mark it read, snooze it, or press Esc in it.
+The red status stays up while you keep working. Your own tool calls, a compact, `codello session-status clear`, a client reconnecting, and a `codello restart` do not take it down; it survives a restart with its message. It clears only when the user engages with the session: they type in it, bring it on screen after it was off screen, mark it read, select an answer, snooze it, or press Esc in it.
 
 ## Only for harm that is happening now
 
@@ -43,11 +43,11 @@ Unlike `done` and `session-status`, this command is not reserved for the session
 
 ## Raise it once
 
-The host sends at most one push per session in any 5 minutes, counted from the last push that went out. A second `codello emergency` inside that window sends no push: it only replaces the message on the red session row. Run it again only when the situation changes, such as when the harm spreads or your mitigation fails, and put the rest of the detail in your reply. Never repeat it to escalate; a repeat inside the window cannot reach the user's phone.
+The host sends at most one push per session in any 5 minutes, counted from the last push that went out. The limit is held in memory, so a host restart resets it. A second `codello emergency` inside that window sends no push: it only replaces the message on the red session row. Run it again only when the situation changes, such as when the harm spreads or your mitigation fails, and put the rest of the detail in your reply. Never repeat it to escalate; a repeat inside the window cannot reach the user's phone.
 
 ## Write the message for a lock screen
 
-`-m` is the push body, read on a lock screen by someone who does not know what you were doing. Keep it under about 150 characters so it fits on a lock screen; the host keeps at most 500. `-m` is required, and an empty message is refused.
+`-m` is the push body, read on a lock screen by someone who does not know what you were doing. Keep it under about 150 characters so it fits on a lock screen; the session and the push show only the first 500. `-m` is required, and an empty message is refused.
 
 - **Start with what is broken and its impact.** "Prod API returning 500s" or "Deleted 4,000 customer rows in the prod database", not "I ran a migration".
 - **Then say what you did about it.** "rolled back, still failing" or "stopped the job, no backup found".
@@ -68,7 +68,7 @@ codello emergency -m "Nightly export job looping on prod, ~\$40/min in Bedrock c
 
 Run the command with `dangerouslyDisableSandbox: true`. The CLI talks to the local server on `127.0.0.1:3847`, which a sandboxed command cannot reach.
 
-The alert went out when the command prints:
+Every line the CLI prints starts with `[codetogo] `, which the examples here leave out. The alert went out when the command prints:
 
 ```
 Emergency raised. The user was sent a Time Sensitive push, and the session shows a red emergency status until they open it.
@@ -83,6 +83,14 @@ No push was sent: this session already sent one in the last 5 minutes. Another p
 ```
 
 That is not a failure: the user already got a push for this session, and the row now shows your new message. Do not retry to get the push through.
+
+If your message was over 500 characters, either reply ends with one more line:
+
+```
+Your message was longer than 500 characters, so the session and the push show only the first 500.
+```
+
+The rest of the message never reached the user. If the cut part mattered, put it in your reply; do not run the command again only to resend it.
 
 Anything else means no push went out. Put the emergency at the top of your reply in plain words either way:
 
