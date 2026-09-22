@@ -200,7 +200,9 @@ loss or corruption, leaked credentials, a destructive action that went wrong, or
 whether the agent caused it or found it. You get a Time Sensitive push on your phone and desktop
 at once, and the session turns red. Unlike `done` and `session-status`, any agent in the session
 may run it, including a subagent or teammate, and it fires immediately rather than at the end of
-the turn. The server sends at most one push per session every 5 minutes. The skill tells the
+the turn. The server sends at most one push per session in any 5 minutes; a repeat inside that
+window only replaces the message on the red row. The red status stays up until you open, select,
+type in, mark read, snooze, or press Esc in the session. The skill tells the
 agent to contain what it safely can first, raise the alert once, keep working on mitigation, and
 never use it for blockers, questions, failing tests, or finished work. The `emergency` command
 ships in the `codello` CLI ([COD-1655](https://linear.app/masonsystems/issue/COD-1655/let-an-agent-raise-an-emergency-alert-with-codello-emergency)).
