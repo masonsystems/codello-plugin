@@ -5,7 +5,7 @@ description: "Tell Codello that this session is waiting on the user — `codello
 
 # Declare that this session is waiting on the user
 
-Codello shows the user a needs-you dot when a turn ends on a question or a permission prompt. It cannot see a wait that you describe in prose, and if anything you started is still running (a `Monitor`, a background `Bash`, a subagent, a dev server) the session reads as busy however plainly your reply says otherwise. On September 18, 2026 that cost five hours of a session waiting silently. The declaration replaces the inference.
+Codello shows the user a needs-you dot when a turn ends on a question or a permission prompt. It cannot see a wait that you describe in prose, and if anything you started is still running (a `Monitor`, a background `Bash`, a dev server) the session reads as busy however plainly your reply says otherwise. On September 18, 2026 that cost five hours of a session waiting silently. The declaration replaces the inference.
 
 ```bash
 codello session-status set waiting -m "PR ready for review: https://github.com/org/repo/pull/123"
@@ -28,6 +28,8 @@ Run it silently in the turn that leaves something only the user can do, before y
 - A permission you cannot grant yourself: a denied command, a credential, an interactive login, an MFA prompt.
 - A blocker only they can clear: an environment you cannot reach, an account you do not have, a change on a system outside your access.
 - You are handing back a **Blocker** or **Decision needed** item.
+
+Never set it while a subagent, a teammate, or a review whose result you are waiting on is still running. The declaration outranks everything Codello infers, so the user sees "waiting on you" while your work is still going, and that result can change what you ask them for. Declare in the turn the result arrives. A watcher on an outside event is different: if a `Monitor`, a background `Bash`, a dev server, or a CI run is still going and the user has something to do now, declare.
 
 One declaration per wait. A second `set` replaces the line on the row and sends another push, so declare once and declare again only when what the user has to do has changed, or when a declaration was dropped.
 
