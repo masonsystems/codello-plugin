@@ -82,7 +82,7 @@ re-armed and what you dropped — that line is the only place they learn it.
 
 Pause for the user only when: a blocker needs a
 decision/credentials/access only they can give, the outstanding work is genuinely ambiguous
-**and** the source transcript doesn't resolve it (`aii show cc/<id>`), or there's no
+**and** the source transcript doesn't resolve it (a bounded read of `~/.claude/projects/*/<id>.jsonl`), or there's no
 actionable work left (pure context) — then say it's loaded and ask what they want.
 
 Heed **Failed Approaches** (don't repeat them), **Warnings**, and **Key Decisions**.
