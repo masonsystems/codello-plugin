@@ -12,7 +12,7 @@ live session) — reach for that when the context is polluted, not merely long.
 
 ```bash
 git status && git diff --stat && git log --oneline -5
-echo "cc/$CLAUDE_CODE_SESSION_ID"      # source transcript id (for aii) — omit if empty
+echo "cc/$CLAUDE_CODE_SESSION_ID"      # source transcript id — omit if empty
 echo "$CODELLO_SESSION"                # the Codello session id, if this is one
 # Monitors and background Bash tasks this session started and never saw finish.
 INV="${CLAUDE_PLUGIN_ROOT:-}/scripts/background-inventory.sh"
@@ -38,7 +38,7 @@ Failed Approaches**:
 **Session**: cc/<id>   ← omit this line if $CLAUDE_CODE_SESSION_ID was empty
 
 > Need context this handoff doesn't hold? The full prior session is at the Session id.
-> Read it with aii: `aii show cc/<id>` (run `aii index --source cc` first if not found).
+> Its transcript is `~/.claude/projects/*/<id>.jsonl`; read the end of it with a bounded read (`tail -c 400000`), never the whole file.
 > Don't guess at lost context — pull it.
 
 ## Goal

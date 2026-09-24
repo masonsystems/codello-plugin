@@ -5,7 +5,7 @@ description: "Tell Codello that this session is waiting on the user — `codello
 
 # Declare that this session is waiting on the user
 
-Codello shows the user a needs-you dot when a turn ends on a question or a permission prompt. It cannot see a wait that you describe in prose, and if anything you started is still running (a `Monitor`, a background `Bash`, a subagent, a dev server) the session reads as busy however plainly your reply says otherwise. On September 18, 2026 that cost five hours of a session waiting silently. The declaration replaces the inference.
+Codello shows the user a needs-you dot when a turn ends on a question or a permission prompt. It cannot see a wait that you describe in prose, and if anything you started is still running (a `Monitor`, a background `Bash`, a subagent, a dev server) the session reads as busy however plainly your reply says otherwise, so the user is never told. The declaration replaces the inference.
 
 ```bash
 codello session-status set waiting -m "PR ready for review: https://github.com/org/repo/pull/123"
