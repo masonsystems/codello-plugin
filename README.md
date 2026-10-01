@@ -198,6 +198,16 @@ when no skill loads. It is a no-op when `CODELLO_SESSION` (or the older `CODETOG
 is unset or `codello` is not on `PATH`, so the plugin adds nothing to an unrelated Claude
 session.
 
+## The Codello bridge mod
+
+`plugin/mods/codello-bridge/` is a separate plugin: a Claude Code mod, which needs Claude Code 2.1.287 or later. You never install it. The Codello host loads it into the sessions it starts, with a second `--plugin-dir`, only when the installed Claude Code is new enough, so an older Claude Code never sees it. The marketplace does not list it.
+
+It carries chat sends from the Codello app into the session without typing them into the terminal, and it tells the host when a turn starts and ends, when the conversation compacts, and when a usage window moves. A send that arrives mid-turn is held and delivered once: appended after the next tool call, or submitted when the turn ends; after an interrupt it is appended and never starts a turn. A send runs as a slash command only when it names a command the session has.
+
+The host gives each session its own Unix socket and token through `CODELLO_BRIDGE_SOCKET` and `CODELLO_BRIDGE_TOKEN`. The mod unsets the token as it starts, so the agent's own commands do not inherit it. Outside a Codello session the variables are absent and the mod does nothing. Every hook passes its event on, and a host that is down or refuses a call never fails a turn: the host types the send into the terminal instead. The design and its upgrade path are in [Claude Code's I/O surfaces](https://github.com/masonsystems/codetogo/blob/main/docs/claude-code-io-surfaces.md) in the Codello repository.
+
+Check it with `claude plugin validate plugin/mods/codello-bridge` and `claude plugin test plugin/mods/codello-bridge`.
+
 ## Handoff, resume & compact
 
 Transfer context across a boundary — a new agent, a new session, or a fresh process under
