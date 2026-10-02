@@ -1,6 +1,8 @@
 import { expect, mock, test } from 'claude-code/testing'
 import type { HttpInit, On } from 'claude-code'
 
+import type { BridgeTurn } from '../types'
+
 // `session.append` is not exercised here: on 2.1.287 the kit cannot stand in
 // for the row store (a test hook that answers without `next` is skipped, and
 // nothing lies beneath it). The append of a held send at the next tool call,
@@ -21,7 +23,8 @@ type Respond = (call: Fetched) => { status: number; text: string }
 
 // Answers the engine's own work beneath the plugin, and the host's socket,
 // which records each request and answers with `respond`.
-function host(on: On, respond: Respond): { calls: Fetched[]; unset: string[] } {
+// With `slowPoll`, that poll answers 30 ms late on `clock`.
+function host(on: On, respond: Respond, slowPoll?: number, clock?: { sleep: (ms: number) => Promise<void> }): { calls: Fetched[]; unset: string[] } {
   const calls: Fetched[] = []
   const unset: string[] = []
   on('session.start', ($, e) => ({ cwd: e.cwd }))
@@ -31,8 +34,11 @@ function host(on: On, respond: Respond): { calls: Fetched[]; unset: string[] } {
   })
   on('turn.start', ($, e) => ({ turnId: e.turnId }))
   on('turn.complete', () => ({ text: '' }))
-  on('http.fetch', ($, e) => {
+  let polls = 0
+  on('http.fetch', async ($, e) => {
     calls.push({ url: e.url, init: e.init })
+    if (e.url.includes('/v1/inbound')) polls += 1
+    if (clock && polls === slowPoll && e.url.includes('/v1/inbound')) await clock.sleep(30)
     const { status, text } = respond({ url: e.url, init: e.init })
     return { value: { status, ok: status >= 200 && status < 300, headers: {}, text } }
   })
@@ -87,13 +93,13 @@ test('turn start and end are posted to the host socket with the token, in order'
   expect(body.indexOf('"kind":"turn-start"') < body.indexOf('"kind":"turn-complete"')).toBe(true)
 })
 
-test('the token is unset so the agent’s children do not inherit it', async ($, on) => {
+test('the token and the socket path are unset so the agent’s children do not inherit them', async ($, on) => {
   mock.env(on, { CODELLO_BRIDGE_SOCKET: SOCKET, CODELLO_BRIDGE_TOKEN: TOKEN })
   const { unset } = host(on, pollEnds)
 
   await $.session.start(START)
 
-  expect(unset).toEqual(['CODELLO_BRIDGE_TOKEN'])
+  expect(unset).toEqual(['CODELLO_BRIDGE_TOKEN', 'CODELLO_BRIDGE_SOCKET'])
 })
 
 test('a host that refuses the connection never fails the event', async ($, on) => {
@@ -230,4 +236,166 @@ test('a usage window that moves is posted to the host', async ($, on) => {
 
   expect(posted(calls)).toContain('"kind":"measure"')
   expect(posted(calls)).toContain('"percentUsed":100')
+})
+
+// Every write of the mod's turn, in order, answered as the engine would.
+// With `slowDue`, a write that marks a send due takes that long to land.
+function turnWrites(on: On, slowDue?: (ms: number) => Promise<void>): unknown[] {
+  const writes: unknown[] = []
+  let version = 0
+  on('state.set', async ($, e) => {
+    if (slowDue && e.key === 'turn' && e.value.held.some(send => send.stage === 'due')) await slowDue(5)
+    if (e.key === 'turn') writes.push(e.value)
+    version += 1
+    return { value: { isSet: true as const, version } }
+  })
+  return writes
+}
+
+// Stands in for what an earlier load of the mod left in session state: the
+// link it read from the environment, and its turn.
+function earlierLoad(on: On, turn: BridgeTurn): void {
+  on('state.get', ($, e) =>
+    e.key === 'link'
+      ? { value: { value: { socketPath: SOCKET, token: TOKEN }, version: 1 } }
+      : { value: { value: turn, version: 1 } },
+  )
+}
+
+test('when a turn ends, its held sends are written as due before the hook returns', async ($, on) => {
+  mock.env(on, { CODELLO_BRIDGE_SOCKET: SOCKET, CODELLO_BRIDGE_TOKEN: TOKEN })
+  const clock = mock.clock(on)
+  host(on, sendsOnce([{ id: 's1', text: 'and the other thing' }]))
+  on('command.list', () => ({ value: [] }))
+  const writes = turnWrites(on, ms => clock.sleep(ms))
+  const submitted: string[] = []
+  on('prompt.submit', ($, e) => {
+    submitted.push(e.text)
+    return { text: e.text }
+  })
+  await $.session.start(START)
+  await $.turn.start({ text: 'first', turnId: 't1' })
+  await clock.advance(10)
+
+  // What a reload as the hook returns would read: the last write landed then.
+  let atReturn: unknown
+  const completed = $.turn.complete(COMPLETE).then(() => {
+    atReturn = writes[writes.length - 1]
+  })
+  await clock.advance(5)
+  await completed
+
+  expect(atReturn).toEqual({
+    isRunning: false,
+    held: [{ id: 's1', text: 'and the other thing', isCommand: false, stage: 'due', isAfterAbort: false }],
+  })
+
+  await clock.advance(10)
+
+  expect(submitted).toEqual(['and the other thing'])
+  expect(writes[writes.length - 1]).toEqual({ isRunning: false, held: [] })
+})
+
+test('a load after a reload at turn end delivers the due sends once, and reports a send it may have delivered', async ($, on) => {
+  // The first load unset the variables; this load finds them gone.
+  mock.env(on, {})
+  const clock = mock.clock(on)
+  const { calls } = host(on, pollEnds)
+  on('command.list', () => ({ value: [] }))
+  earlierLoad(on, {
+    isRunning: false,
+    held: [
+      { id: 's1', text: 'already going', isCommand: false, stage: 'sending' },
+      { id: 's2', text: 'next one', isCommand: false, stage: 'due', isAfterAbort: false },
+    ],
+  })
+  const writes = turnWrites(on)
+  const submitted: string[] = []
+  on('prompt.submit', ($, e) => {
+    submitted.push(e.text)
+    return { text: e.text }
+  })
+
+  await $.session.start(START)
+  await clock.advance(10)
+  await clock.advance(10)
+
+  expect(submitted).toEqual(['next one'])
+  expect(posted(calls)).toContain('"id":"s1","via":"submit","ok":false,"cause":"reloaded"')
+  expect(posted(calls)).toContain('"id":"s2","via":"submit","ok":true,"cause":"held"')
+  expect(writes[writes.length - 1]).toEqual({ isRunning: false, held: [] })
+})
+
+test('a load after a reload mid-turn keeps the held sends for the turn’s end', async ($, on) => {
+  mock.env(on, {})
+  const clock = mock.clock(on)
+  host(on, pollEnds)
+  on('command.list', () => ({ value: [] }))
+  earlierLoad(on, { isRunning: true, held: [{ id: 's1', text: 'later', isCommand: false, stage: 'held' }] })
+  const submitted: string[] = []
+  on('prompt.submit', ($, e) => {
+    submitted.push(e.text)
+    return { text: e.text }
+  })
+  await $.session.start(START)
+  await clock.advance(10)
+  expect(submitted).toEqual([])
+
+  await $.turn.complete(COMPLETE)
+  await clock.advance(10)
+
+  expect(submitted).toEqual(['later'])
+})
+
+test('a command held through an interrupted turn is not run, and is reported undelivered', async ($, on) => {
+  mock.env(on, { CODELLO_BRIDGE_SOCKET: SOCKET, CODELLO_BRIDGE_TOKEN: TOKEN })
+  const clock = mock.clock(on)
+  const { calls } = host(on, sendsOnce([{ id: 's1', text: '/compact' }]))
+  on('command.list', () => ({
+    value: [{ name: 'compact', description: 'Compact the conversation', source: 'builtin' }],
+  }))
+  const ran: string[] = []
+  on('command.run', ($, e) => {
+    ran.push(e.command)
+    return {}
+  })
+  await $.session.start(START)
+  await $.turn.start({ text: 'first', turnId: 't1' })
+  await clock.advance(10)
+
+  await $.turn.complete({ ...COMPLETE, isAborted: true, reason: 'aborted' })
+  await clock.advance(10)
+
+  expect(ran).toEqual([])
+  expect(posted(calls)).toContain('"id":"s1","via":"command","ok":false,"cause":"aborted"')
+})
+
+test('a send that arrives while an ended turn’s sends are still going out waits behind them', async ($, on) => {
+  mock.env(on, { CODELLO_BRIDGE_SOCKET: SOCKET, CODELLO_BRIDGE_TOKEN: TOKEN })
+  const clock = mock.clock(on)
+  let polls = 0
+  host(on, call => {
+    if (!call.url.includes('/v1/inbound')) return { status: 200, text: '{}' }
+    polls += 1
+    if (polls === 1) return { status: 200, text: JSON.stringify({ sends: [{ id: 's1', text: 'one' }] }) }
+    if (polls === 2) return { status: 200, text: JSON.stringify({ sends: [{ id: 's2', text: 'two' }] }) }
+    return { status: 409, text: '' }
+  }, 2, clock)
+  on('command.list', () => ({ value: [] }))
+  const submitted: string[] = []
+  on('prompt.submit', async ($, e) => {
+    // The first submit is slow, so the second send arrives while it is going out.
+    if (e.text === 'one') await clock.sleep(50)
+    submitted.push(e.text)
+    return { text: e.text }
+  })
+  await $.session.start(START)
+  await $.turn.start({ text: 'first', turnId: 't1' })
+  // s1 is held mid-turn; the poll that brings s2 answers 30 ms later.
+  await clock.advance(10)
+  await $.turn.complete(COMPLETE)
+  await clock.advance(10)
+  await clock.advance(100)
+
+  expect(submitted).toEqual(['one', 'two'])
 })

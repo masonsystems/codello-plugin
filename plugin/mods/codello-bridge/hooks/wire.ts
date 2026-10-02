@@ -28,6 +28,16 @@ export interface OutboundEvent {
 // command, and `hold` kept it for the turn's next tool call or its end.
 export type DeliveryRoute = 'submit' | 'append' | 'command' | 'hold'
 
+// Why a send took the route it did, or why it failed: `held` waited out a
+// turn, `tool-call` was appended inside the turn's next tool call, `aborted`
+// waited on a turn that was interrupted, and `reloaded` was being delivered
+// when the mod reloaded, so whether it reached the model is unknown. The host
+// never types a send that failed `aborted` or `reloaded`.
+export type DeliveryCause = 'held' | 'tool-call' | 'aborted' | 'reloaded'
+
+// A send carries only its words: the host never says how to route one. The
+// mod runs a send as a slash command when its first word names one of
+// `$.command.list()`, and submits or appends it otherwise.
 export interface InboundSend {
   id: string
   text: string

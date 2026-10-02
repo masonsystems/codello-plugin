@@ -1,6 +1,7 @@
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { BridgeLink, BridgeSend, BridgeTurn } from '../types'
+import type { BridgeLink, BridgeSend, BridgeSendStage, BridgeTurn } from '../types'
+import { EventQueue } from './event-queue'
 import {
   BRIDGE_ORIGIN,
   EVENTS_PATH,
@@ -8,8 +9,8 @@ import {
   POLL_WAIT_MS,
   parseInbound,
   type DeliveryRoute,
+  type DeliveryCause,
   type InboundSend,
-  type OutboundEvent,
 } from './wire'
 
 // The codello-bridge mod (COD-1821). It carries Codello chat sends into the
@@ -33,7 +34,7 @@ const MAX_BACKOFF_MS = 5_000
 // `undefined` until this load's session.start has looked; `null` when no host
 // was configured, which turns every emit into nothing.
 let link: BridgeLink | null | undefined
-const queue: OutboundEvent[] = []
+const queue = new EventQueue(MAX_QUEUE, MAX_BATCH)
 let isDraining = false
 let seq = 0
 // A fresh id per module load, so the host can see a hot reload in the stream.
@@ -42,12 +43,16 @@ const loadId = crypto.randomUUID()
 // reload takes it up. Routing reads this copy synchronously: an await between
 // reading the turn and acting on it would let the turn end in between.
 let turn: BridgeTurn = IDLE
+// The state writes, one after another, so the last one written is the last
+// one made; each change is awaited before anything that depends on it runs.
+let written: Promise<void> = Promise.resolve()
+// The one loop that delivers sends whose turn has ended.
+let isDeliveringDue = false
 
 function emit($: EngineInterface, kind: string, fields: Record<string, unknown>): void {
   if (link === null) return
   seq += 1
   queue.push({ ...fields, seq, loadId, at: Date.now(), kind })
-  if (queue.length > MAX_QUEUE) queue.splice(0, queue.length - MAX_QUEUE)
   void drain($)
 }
 
@@ -61,8 +66,8 @@ async function drain($: EngineInterface): Promise<void> {
   if (isDraining || !link) return
   isDraining = true
   try {
-    while (queue.length > 0 && link) {
-      const batch = queue.slice(0, MAX_BATCH)
+    while (queue.size > 0 && link) {
+      const batch = queue.batch()
       const sent = await $.http
         .fetch(BRIDGE_ORIGIN + EVENTS_PATH, {
           method: 'POST',
@@ -75,7 +80,7 @@ async function drain($: EngineInterface): Promise<void> {
           () => false,
         )
       if (!sent) return
-      queue.splice(0, batch.length)
+      queue.acknowledge(batch)
     }
   } finally {
     isDraining = false
@@ -88,9 +93,25 @@ function wait($: EngineInterface, ms: number): Promise<void> {
   })
 }
 
-function setTurn($: EngineInterface, next: BridgeTurn): void {
+// The module's copy changes at once; the returned write lands after every
+// earlier one. A write that fails leaves the copy in state behind, which a
+// reload would read, so nothing here depends on it succeeding.
+function setTurn($: EngineInterface, next: BridgeTurn): Promise<void> {
   turn = next
-  void $.state.set(TURN, next).catch(() => undefined)
+  written = written.then(
+    () => $.state.set(TURN, next).then(() => undefined),
+    () => undefined,
+  )
+  return written.catch(() => undefined)
+}
+
+function restage($: EngineInterface, ids: readonly string[], stage: BridgeSendStage): Promise<void> {
+  return setTurn($, { ...turn, held: turn.held.map(send => (ids.includes(send.id) ? { ...send, stage } : send)) })
+}
+
+// The send's delivery has an outcome, so a reload has nothing left to do for it.
+function settle($: EngineInterface, id: string): Promise<void> {
+  return setTurn($, { ...turn, held: turn.held.filter(send => send.id !== id) })
 }
 
 function report($: EngineInterface, id: string, via: DeliveryRoute, fields: Record<string, unknown>): void {
@@ -108,7 +129,7 @@ async function commandOf($: EngineInterface, text: string): Promise<{ name: stri
   return known.some(command => command.name === name) ? { name, args: match?.[2] ?? '' } : undefined
 }
 
-async function runCommand($: EngineInterface, send: BridgeSend, cause?: 'held'): Promise<void> {
+async function runCommand($: EngineInterface, send: { id: string; text: string }, cause?: DeliveryCause): Promise<void> {
   try {
     const command = await commandOf($, send.text)
     if (!command) throw new Error('not a command this session has')
@@ -119,7 +140,7 @@ async function runCommand($: EngineInterface, send: BridgeSend, cause?: 'held'):
   }
 }
 
-async function submitSend($: EngineInterface, send: BridgeSend, cause?: 'held'): Promise<void> {
+async function submitSend($: EngineInterface, send: { id: string; text: string }, cause?: DeliveryCause): Promise<void> {
   try {
     const entered = await $.prompt.submit({ text: send.text, asUser: true })
     report($, send.id, 'submit', { ok: entered.drop === undefined, cause, drop: entered.drop })
@@ -128,7 +149,7 @@ async function submitSend($: EngineInterface, send: BridgeSend, cause?: 'held'):
   }
 }
 
-async function appendSend($: EngineInterface, send: BridgeSend, cause: 'tool-call' | 'aborted'): Promise<void> {
+async function appendSend($: EngineInterface, send: { id: string; text: string }, cause: DeliveryCause): Promise<void> {
   try {
     const stored = await $.session.append({
       message: { type: 'user', content: [{ type: 'text', text: send.text }] },
@@ -148,6 +169,14 @@ async function appendSend($: EngineInterface, send: BridgeSend, cause: 'tool-cal
 // request carries it. A turn that ends with sends still held submits each as
 // a turn of its own; nothing was appended, so the model reads each send once.
 // A command is never appended; a held one runs when the turn ends.
+//
+// After an interrupt the person is back at the prompt, so nothing held starts
+// a turn: a text send is appended as a row the next turn reads, and a command
+// is not run. The command is reported undelivered with the cause `aborted`,
+// which the host shows as not sent rather than typing it.
+//
+// A held send stays in session state until its delivery has an outcome, so a
+// reload or a respawned worker never drops one; see BridgeSendStage.
 async function deliver($: EngineInterface, inbound: InboundSend): Promise<void> {
   let isCommand: boolean
   try {
@@ -156,13 +185,64 @@ async function deliver($: EngineInterface, inbound: InboundSend): Promise<void> 
     report($, inbound.id, 'submit', { ok: false, error: String(err) })
     return
   }
-  const send: BridgeSend = { id: inbound.id, text: inbound.text, isCommand }
-  if (turn.isRunning) {
-    setTurn($, { ...turn, held: [...turn.held, send] })
-    report($, send.id, 'hold', { ok: true })
+  // Read and written with no await between, so a turn edge cannot fall in
+  // the gap. Behind sends still waiting on an ended turn, a new send waits
+  // its own turn too, so sends reach the model in the order they came.
+  if (turn.isRunning || turn.held.length > 0) {
+    const stage: BridgeSendStage = turn.isRunning ? 'held' : 'due'
+    await setTurn($, { ...turn, held: [...turn.held, { id: inbound.id, text: inbound.text, isCommand, stage }] })
+    report($, inbound.id, 'hold', { ok: true })
+    if (stage === 'due') void deliverDue($)
     return
   }
-  await (isCommand ? runCommand($, send) : submitSend($, send))
+  await (isCommand ? runCommand($, inbound) : submitSend($, inbound))
+}
+
+async function deliverOne($: EngineInterface, send: BridgeSend): Promise<void> {
+  if (send.isCommand) {
+    if (send.isAfterAbort) report($, send.id, 'command', { ok: false, cause: 'aborted', error: 'the turn it waited on was interrupted' })
+    else await runCommand($, send, 'held')
+  } else if (send.isAfterAbort) {
+    await appendSend($, send, 'aborted')
+  } else {
+    await submitSend($, send, 'held')
+  }
+}
+
+// Delivers the sends whose turn ended, oldest first, one at a time. A
+// submitted send starts a turn; the rest wait for that turn to end.
+async function deliverDue($: EngineInterface): Promise<void> {
+  if (isDeliveringDue) return
+  isDeliveringDue = true
+  try {
+    for (;;) {
+      if (turn.isRunning) return
+      const next = turn.held.find(send => send.stage === 'due')
+      if (next === undefined) return
+      await restage($, [next.id], 'sending')
+      await deliverOne($, next)
+      await settle($, next.id)
+    }
+  } finally {
+    isDeliveringDue = false
+  }
+}
+
+// A load that starts with sends the last load left: one whose delivery had
+// started may already be in, so it is reported and never sent again; the
+// rest keep their places. A state written by an older build has no stages,
+// and every send in it was still waiting.
+async function takeUpTurn($: EngineInterface, kept: BridgeTurn): Promise<void> {
+  const held = kept.held.map(send => ({ ...send, stage: send.stage ?? 'held' }))
+  for (const send of held) {
+    if (send.stage !== 'sending') continue
+    report($, send.id, send.isCommand ? 'command' : 'submit', {
+      ok: false,
+      cause: 'reloaded',
+      error: 'the mod reloaded while delivering it',
+    })
+  }
+  await setTurn($, { isRunning: kept.isRunning, held: held.filter(send => send.stage !== 'sending') })
 }
 
 // The inbound half: one long poll at a time. The host answers as soon as a
@@ -190,7 +270,7 @@ async function pollLoop($: EngineInterface, target: BridgeLink): Promise<void> {
 }
 
 // Reads the host's address from the environment on a cold start, then unsets
-// the token so no Bash child inherits it. A hot reload finds the token gone
+// both variables so no Bash child inherits them. A hot reload finds them gone
 // and takes the link the first load kept in session state.
 async function resolveLink($: EngineInterface): Promise<BridgeLink | null> {
   const socketPath = await $.env.get('CODELLO_BRIDGE_SOCKET')
@@ -198,8 +278,9 @@ async function resolveLink($: EngineInterface): Promise<BridgeLink | null> {
   if (socketPath && token) {
     const found: BridgeLink = { socketPath, token }
     await $.state.set(LINK, found)
-    // Best effort: a refused unset leaves the token inherited, not the link down.
+    // Best effort: a refused unset leaves a variable inherited, not the link down.
     await $.env.set('CODELLO_BRIDGE_TOKEN', undefined).catch(() => undefined)
+    await $.env.set('CODELLO_BRIDGE_SOCKET', undefined).catch(() => undefined)
     return found
   }
   const kept = await $.state.get(LINK)
@@ -208,10 +289,11 @@ async function resolveLink($: EngineInterface): Promise<BridgeLink | null> {
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
+    let kept: BridgeTurn = IDLE
     try {
       link = await resolveLink($)
       // A hot reload takes up the turn the last load left, held sends included.
-      turn = (await $.state.get(TURN)).value ?? IDLE
+      kept = (await $.state.get(TURN)).value ?? IDLE
     } catch {
       link = null
     }
@@ -219,9 +301,13 @@ export const register: Register = on => {
     if (link) {
       const target = link
       emit($, 'session-start', { isInteractive: e.isInteractive })
+      await takeUpTurn($, kept)
       // Started from a timer so session.start, which the first prompt waits
       // on, returns at once.
-      $.clock.after(0, () => void pollLoop($, target))
+      $.clock.after(0, () => {
+        void pollLoop($, target)
+        void deliverDue($)
+      })
     }
     return started
   })
@@ -233,7 +319,7 @@ export const register: Register = on => {
 
   // Main loop only: a subagent's run raises no turn.start.
   on('turn.start', async ($, e, next) => {
-    setTurn($, { ...turn, isRunning: true })
+    await setTurn($, { ...turn, isRunning: true })
     emit($, 'turn-start', { turnId: e.turnId })
     return next(e)
   })
@@ -242,10 +328,13 @@ export const register: Register = on => {
   // before it stores the tool's result and builds the next request.
   on('tool.call', async ($, e, next) => {
     const result = await next(e)
-    if (e.agentId === undefined && turn.held.some(send => !send.isCommand)) {
-      const texts = turn.held.filter(send => !send.isCommand)
-      setTurn($, { ...turn, held: turn.held.filter(send => send.isCommand) })
-      for (const send of texts) await appendSend($, send, 'tool-call')
+    const texts = e.agentId === undefined ? turn.held.filter(send => send.stage === 'held' && !send.isCommand) : []
+    if (texts.length > 0) {
+      await restage($, texts.map(send => send.id), 'sending')
+      for (const send of texts) {
+        await appendSend($, send, 'tool-call')
+        await settle($, send.id)
+      }
     }
     return result
   })
@@ -253,19 +342,13 @@ export const register: Register = on => {
   on('turn.complete', async ($, e, next) => {
     const done = await next(e)
     if (e.agentId === undefined) {
-      // Read and cleared with no await between, so a send routed after this
-      // sees an idle session and is submitted, not held.
-      const sends = turn.held
-      setTurn($, IDLE)
-      for (const send of sends) {
-        $.clock.after(0, () => {
-          // Interrupted: the person is back at the prompt, so no text send
-          // starts a turn. It goes in as a row the next turn reads.
-          if (send.isCommand) void runCommand($, send, 'held')
-          else if (e.isAborted) void appendSend($, send, 'aborted')
-          else void submitSend($, send, 'held')
-        })
-      }
+      // Marked due with no await between, so a send routed after this waits
+      // behind them. The deliveries run from a timer, after this hook returns.
+      await setTurn($, {
+        isRunning: false,
+        held: turn.held.map(send => (send.stage === 'held' ? { ...send, stage: 'due', isAfterAbort: e.isAborted } : send)),
+      })
+      $.clock.after(0, () => void deliverDue($))
       emit($, 'turn-complete', { turnId: e.turnId, reason: e.reason, isAborted: e.isAborted })
     }
     return done
