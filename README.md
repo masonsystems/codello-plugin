@@ -200,7 +200,7 @@ session.
 
 ## The Codello bridge mod
 
-`plugin/mods/codello-bridge/` is a separate plugin: a Claude Code mod, which needs Claude Code 2.1.287 or later. You never install it. The Codello host loads it into the sessions it starts, with a second `--plugin-dir`, only when the installed Claude Code is new enough, so an older Claude Code never sees it. The marketplace does not list it.
+`plugin/mods/codello-bridge/` is a separate plugin: a Claude Code mod, which needs Claude Code 2.1.287 or later. You never install it. The Codello host loads it into the sessions it starts, with a second `--plugin-dir`, only when its `modBridge` setting is on (`codello config set modBridge true`; it is off by default) and the installed Claude Code is new enough, so an older Claude Code never sees it. The marketplace does not list it.
 
 It carries chat sends from the Codello app into the session without typing them into the terminal, and it tells the host when a turn starts and ends, when the conversation compacts, and when a usage window moves. A send that arrives mid-turn is held and delivered once: appended after the next tool call, or submitted when the turn ends; after an interrupt a text send is appended and never starts a turn, while a held slash command is not run and the app shows it as not sent. A held send stays in session state until its delivery has an outcome, so a reload of the mod keeps it; a send whose delivery had started when the mod reloaded is reported unverified and never sent twice. A send runs as a slash command only when it names a command the session has.
 
