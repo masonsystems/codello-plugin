@@ -49,12 +49,14 @@ Otherwise the user is describing **what** to do and **when**. Do this:
    - an ISO date/time for a one-shot (e.g. "tomorrow at 3pm" →
      `2026-06-17T15:00`). Compute the absolute date from today if needed.
 
-4. **Write a self-contained prompt to a temp file.** The scheduled Claude has no
-   memory of this chat, so spell out the full task, the repo/dir context, and what
-   "done" looks like. NEVER inline the prompt through shell quoting — write it to a
-   file and pass `--prompt-file`:
+4. **Write a self-contained prompt to a file in your session scratchpad directory.**
+   The scheduled Claude has no memory of this chat, so spell out the full task, the
+   repo/dir context, and what "done" looks like. Pass the file with `--prompt-file`
+   rather than inlining the prompt, because shell quoting mangles quotes and newlines.
+   Use the scratchpad, not `/tmp` or `$TMPDIR`: its path is the same inside and
+   outside the sandbox, and a per-schedule name keeps concurrent sessions apart:
    ```bash
-   cat > /tmp/ctg-schedule-prompt.txt <<'PROMPT'
+   cat > "<scratchpad>/ctg-schedule-<name>.txt" <<'PROMPT'
    <the full, self-contained prompt>
    PROMPT
    ```
@@ -64,7 +66,7 @@ Otherwise the user is describing **what** to do and **when**. Do this:
    ```bash
    codello schedule add --dry-run \
      --name <name> --cwd "<dir>" --at "<cron|ISO>" \
-     --prompt-file /tmp/ctg-schedule-prompt.txt
+     --prompt-file "<scratchpad>/ctg-schedule-<name>.txt"
    ```
 
 6. **Save it — do not ask the user to confirm.** If the dry run parsed cleanly, run
@@ -72,7 +74,7 @@ Otherwise the user is describing **what** to do and **when**. Do this:
    ```bash
    codello schedule add \
      --name <name> --cwd "<dir>" --at "<cron|ISO>" \
-     --prompt-file /tmp/ctg-schedule-prompt.txt
+     --prompt-file "<scratchpad>/ctg-schedule-<name>.txt"
    ```
    Then report what was scheduled: name, next run in the user's local zone, cwd, and
    a one-line summary of the prompt. A schedule is trivially reversible with

@@ -5,7 +5,7 @@ description: "Tell Codello that this session is waiting on the user — `codello
 
 # Declare that this session is waiting on the user
 
-Codello shows the user a needs-you dot when a turn ends on a question or a permission prompt. It cannot see a wait that you describe in prose, and if anything you started is still running (a `Monitor`, a background `Bash`, a subagent, a dev server) the session reads as busy however plainly your reply says otherwise. On September 18, 2026 that cost five hours of a session waiting silently. The declaration replaces the inference.
+Codello shows the user a needs-you dot when a turn ends on a question or a permission prompt. It cannot see a wait that you describe in prose, and if anything you started is still running (a `Monitor`, a background `Bash`, a subagent, a dev server) the session reads as busy however plainly your reply says otherwise, so the user is never told. The declaration replaces the inference.
 
 ```bash
 codello session-status set waiting -m "PR ready for review: https://github.com/org/repo/pull/123"
@@ -74,7 +74,7 @@ No declared status to clear.
 Nothing is armed until the `set` line prints. If the command prints anything else, say so in your reply and end the turn normally:
 
 - `Not in a Codello session`: Codello did not spawn this PTY. Only a `codello claude` session, the web "new session" button, or a scheduled session can declare a status.
-- `Server not running`: the Codello server is down, so there is nothing to record the declaration.
+- `Codello is not running on this host` (older CLIs print `Server not running`): Codello is down on this host, so there is nothing to record the declaration.
 - `A cursor session cannot declare a status`: the declaration fires on a Stop hook, and Cursor has none. Claude Code and Codex sessions can declare; a Cursor session states the wait in its reply instead.
 
 ## Options

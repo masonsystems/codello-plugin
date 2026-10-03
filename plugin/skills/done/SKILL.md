@@ -69,7 +69,7 @@ Task reported as failed. When this turn ends the session is marked failed and yo
 Nothing is armed until that line prints. If the command prints anything else, report exactly what it said and end the turn normally:
 
 - `Not in a Codello session`: Codello did not spawn this PTY. Only a `codello claude` session, the web "new session" button, or a scheduled session can report an outcome.
-- `Server not running`: the Codello server is down, so there is nothing to record the outcome.
+- `Codello is not running on this host` (older CLIs print `Server not running`): Codello is down on this host, so there is nothing to record the outcome.
 
 ## Write the summary for a lock screen
 
