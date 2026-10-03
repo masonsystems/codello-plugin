@@ -1,11 +1,11 @@
 ---
-description: Write a handoff so another agent — or a fresh CodeToGo session — can continue this work
+description: Write a handoff so another agent — or a fresh Codello session — can continue this work
 argument-hint: "[path] | quick"
 ---
 
 Write a `HANDOFF.md` that lets ANY AI coding agent pick up this work with no memory of
-this chat. Inside a CodeToGo-owned session you can instead reset context *in place* with
-`/codetogo:compact` (writes the same handoff, then hot-swaps the `claude` process under the
+this chat. Inside a Codello-owned session you can instead reset context *in place* with
+`/codello:compact` (writes the same handoff, then hot-swaps the `claude` process under the
 live session) — reach for that when the context is polluted, not merely long.
 
 ## 1. Gather state
@@ -13,10 +13,10 @@ live session) — reach for that when the context is polluted, not merely long.
 ```bash
 git status && git diff --stat && git log --oneline -5
 echo "cc/$CLAUDE_CODE_SESSION_ID"      # source transcript id (for aii) — omit if empty
-echo "$CODETOGO_SESSION"               # the CodeToGo session id, if this is one
+echo "$CODELLO_SESSION"                # the Codello session id, if this is one
 # Monitors and background Bash tasks this session started and never saw finish.
 INV="${CLAUDE_PLUGIN_ROOT:-}/scripts/background-inventory.sh"
-[ -f "$INV" ] || INV=$(find "$HOME/.claude/plugins" -maxdepth 7 -name background-inventory.sh -path "*codetogo*" 2>/dev/null | sort -V | tail -1)
+[ -f "$INV" ] || INV=$(find "$HOME/.claude/plugins" -maxdepth 7 -name background-inventory.sh -path "*codello*" 2>/dev/null | sort -V | tail -1)
 [ -n "$INV" ] && [ -f "$INV" ] && bash "$INV"
 ```
 
@@ -94,7 +94,7 @@ If `$ARGUMENTS` is a path, use that instead.
 ROOT="${CLAUDE_PROJECT_DIR:-}"; [ -z "$ROOT" ] && ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"; if [ -z "$ROOT" ]; then d="$PWD"; while [ "$d" != "/" ] && [ ! -d "$d/.claude" ]; do d=$(dirname "$d"); done; ROOT="$d"; fi; [ "$ROOT" = "/" ] && ROOT="$PWD"; mkdir -p "$ROOT/.claude/tmp"; echo "$ROOT/.claude/tmp/HANDOFF.md"
 ```
 
-The first line of the file must be `# Handoff: <title>` so `/codetogo:resume` can tell it
+The first line of the file must be `# Handoff: <title>` so `resume` can tell it
 apart from persistent docs that merely happen to be named `HANDOFF.md`.
 
 ## Always end with the absolute path
@@ -102,4 +102,4 @@ apart from persistent docs that merely happen to be named `HANDOFF.md`.
 After saving, the **last line of your final message MUST be the handoff's absolute path, on
 its own line, with nothing after it** (e.g. `/Users/you/project/.claude/tmp/HANDOFF.md`) — a
 full absolute path, never relative. Keep it last even if you summarize above it, so a
-resuming agent (or `/codetogo:compact`) can point straight at it.
+resuming agent (or `compact`) can point straight at it.

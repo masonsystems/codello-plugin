@@ -1,10 +1,10 @@
 ---
-description: Schedule a pre-seeded CodeToGo session to fire later in this directory
+description: Schedule a pre-seeded Codello session to fire later in this directory
 argument-hint: <what to do> <when> | list | remove <name>
 allowed-tools: Bash
 ---
 
-You are the front door to `codetogo schedule`. A scheduled run launches a **fresh**
+You are the front door to `codello schedule`. A scheduled run launches a **fresh**
 Claude Code run on this machine, in a chosen directory, at a cron or one-shot time —
 it inherits the real files/tools/creds of that dir but has **no memory of this
 conversation**, so the prompt you write must be fully self-contained.
@@ -20,7 +20,7 @@ A schedule fires in one of two modes:
   unless the working directory's settings allow them. If the run needs a tool
   permission that isn't already granted in that directory, the tool call is denied,
   the run is recorded as failed with the denied tool names, and the user gets a push
-  and a bell notification. Results are read afterwards with `codetogo schedule runs`
+  and a bell notification. Results are read afterwards with `codello schedule runs`
   or on the **Background runs** page, which shows each run's full transcript.
 
 `$ARGUMENTS` is the user's request. Handle three shapes:
@@ -30,14 +30,14 @@ A schedule fires in one of two modes:
 If `$ARGUMENTS` is "list" (or empty and the user clearly wants to see schedules):
 
 ```bash
-codetogo schedule list
+codello schedule list
 ```
 
 Show the output and stop. To show what past background runs did instead, use:
 
 ```bash
-codetogo schedule runs            # every background run, newest first
-codetogo schedule runs -n <name>  # just this schedule's runs
+codello schedule runs            # every background run, newest first
+codello schedule runs -n <name>  # just this schedule's runs
 ```
 
 ## 2. Remove
@@ -45,7 +45,7 @@ codetogo schedule runs -n <name>  # just this schedule's runs
 If `$ARGUMENTS` starts with "remove" / "delete" / "cancel" followed by a name:
 
 ```bash
-codetogo schedule remove <name>
+codello schedule remove <name>
 ```
 
 ## 3. Add (the default)
@@ -150,7 +150,7 @@ Otherwise the user is describing **what** to do and **when**. Do this:
 7. **Validate with `--dry-run`** (checks the cwd is a trusted Claude dir, parses the
    trigger, prints the computed next-fire time and the mode — saves nothing):
    ```bash
-   codetogo schedule add --dry-run \
+   codello schedule add --dry-run \
      --name <name> --cwd "<dir>" --at "<cron|ISO>" \
      [--background] \
      --prompt-file /tmp/ctg-schedule-prompt.txt
@@ -159,34 +159,34 @@ Otherwise the user is describing **what** to do and **when**. Do this:
 8. **Save it — do not ask the user to confirm.** If the dry run parsed cleanly, run
    the real command immediately (same flags, no `--dry-run`):
    ```bash
-   codetogo schedule add \
+   codello schedule add \
      --name <name> --cwd "<dir>" --at "<cron|ISO>" \
      [--background] \
      --prompt-file /tmp/ctg-schedule-prompt.txt
    ```
    Then report: the name, the next run in the user's local zone, the cwd, whether it
    is **background or interactive**, a one-line summary of the prompt, and where the
-   result will show up. For a background schedule, that last part is: `codetogo
+   result will show up. For a background schedule, that last part is: `codello
    schedule runs` or the **Background runs** page, where the transcript is readable,
    and a push plus a bell if the run fails.
 
-   A schedule is trivially reversible with `codetogo schedule remove <name>`, so a
+   A schedule is trivially reversible with `codello schedule remove <name>`, so a
    confirmation round trip buys nothing. Only stop and ask if the dry run fails, if
    the request is genuinely ambiguous about *what* to run, or if a background run is
    missing a permission (step 3) — never merely to confirm a time you already parsed.
 
 ### Notes
 
-- **When the Bash sandbox is on, run every `codetogo` call here with `dangerouslyDisableSandbox: true`.** The CLI talks to the local server on `127.0.0.1:3847`, which a sandboxed command can never reach. `--dry-run` is the trap: it never contacts the server, so it passes sandboxed and only the real `add` fails.
+- **When the Bash sandbox is on, run every `codello` call here with `dangerouslyDisableSandbox: true`.** The CLI talks to the local server on `127.0.0.1:3847`, which a sandboxed command can never reach. `--dry-run` is the trap: it never contacts the server, so it passes sandboxed and only the real `add` fails.
 - If `--dry-run` reports the dir isn't a trusted Claude project, tell the user to
   open Claude there once and accept the trust dialog — a scheduled run in an
   untrusted dir hangs at the trust prompt and never delivers the prompt.
-- The server must be running (`codetogo start`) for the schedule to fire, and for
-  background runs to be recorded — `codetogo schedule runs` reads them from the
+- The server must be running (`codello start`) for the schedule to fire, and for
+  background runs to be recorded — `codello schedule runs` reads them from the
   running server.
-- Pass `--prompt-file` an **absolute path that `codetogo` itself can read**. If a
+- Pass `--prompt-file` an **absolute path that `codello` itself can read**. If a
   sandbox redirected your `$TMPDIR`, the path you wrote to is not the path an
-  unsandboxed `codetogo` resolves, and the add fails with `ENOENT`. Write the file,
+  unsandboxed `codello` resolves, and the add fails with `ENOENT`. Write the file,
   then pass the real absolute path you can `ls`.
 - Add `--tz <IANA>` (e.g. `America/Chicago`) only if the user wants a zone other
   than this machine's.
