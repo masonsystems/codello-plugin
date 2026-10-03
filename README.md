@@ -97,7 +97,9 @@ codello sessions --json     # every live session: state, title, cwd, and BOTH id
 If it doesn't seem to load on its own, invoke it once by hand (`Skill: codello:cli`) —
 Claude Code budgets the always-on skill listing and ranks it by recent use, so on a machine
 with a lot of skills installed a brand-new one can start out ranked too low to be offered.
-One use is enough to promote it.
+One use is enough to promote it. The plugin keeps each skill description to about 300
+characters so it takes little of that budget; see
+[Skill descriptions are cut short](https://code.claude.com/docs/en/skills#skill-descriptions-are-cut-short).
 
 The load-bearing thing it teaches is that each session has **two** unrelated uuids — the
 PTY/Codello `id` and the `agentSessionId` naming the Claude/Codex transcript on disk —

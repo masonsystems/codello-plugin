@@ -1,6 +1,6 @@
 ---
 name: done
-description: "Report the outcome of the task this Codello session was opened for — `codello done`, or `codello done --failed`. Run it at the end of a turn, and ONLY when nothing is left for the user in this session: no pull request awaiting their review, no follow-up they have to run, no question, no decision, nothing to check. The session's status indicator becomes a green check (done) or a red ✕ (failed), and a done session closes itself 24 hours later. Also /codello:done. Triggers: you finished everything you were asked to do and have nothing to hand back, or you ran out of ways to do it and have to report that you could not."
+description: "Run `codello done`, or `codello done --failed`, at the end of a turn when the task is finished and nothing is left for the user: no PR to review, no question, no decision. Marks the session done (green check) or failed (red ✕). Also /codello:done."
 ---
 
 # Report what this session ended as
