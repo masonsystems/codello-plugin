@@ -75,7 +75,7 @@ Nothing is armed until the `set` line prints. If the command prints anything els
 
 - `Not in a Codello session`: Codello did not spawn this PTY. Only a `codello claude` session, the web "new session" button, or a scheduled session can declare a status.
 - `Server not running`: the Codello server is down, so there is nothing to record the declaration.
-- `A cursor session cannot declare a status`: the declaration fires on a Stop hook, and Cursor has none. Claude Code and Codex sessions can declare; a Cursor session states the wait in its reply instead.
+- `A cursor session cannot declare a status`: the host predates Cursor support, which needs a Codello CLI restarted after [COD-1539](https://linear.app/masonsystems/issue/COD-1539/). State the wait in your reply instead. On a current host a Cursor session declares like Claude Code and Codex, and the declaration fires when the turn completes.
 
 ## Options
 
