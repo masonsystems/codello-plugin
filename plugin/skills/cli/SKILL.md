@@ -1,6 +1,6 @@
 ---
 name: cli
-description: "BLOCKING: read this BEFORE running any `codello` command or writing any jq over its output — the field names are NOT guessable and a wrong guess returns empty, which reads as \"no such session\" and is a false negative. Triggers: any mention of a Codello/PTY/agent session on this machine, a session or conversation or transcript id, \"which session/agent did this\", \"what is that session doing\", \"is anything waiting on me\", listing/finding/reading sessions, or grepping ~/.claude/projects by hand. Covers: mapping a conversation id to its session (and back), reading a session without attaching, triaging what needs the user."
+description: "Read BEFORE running any `codello` command or writing jq over its output: the field names are not guessable, and a wrong guess returns empty, which reads as \"no such session\". Use for a Codello session or conversation id, \"which session did this\", \"is anything waiting on me\", or finding and reading sessions."
 ---
 
 # Codello CLI

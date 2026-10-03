@@ -1,6 +1,6 @@
 ---
 name: docs
-description: "Answer questions about how to use Codello from the official documentation at https://codello.app/docs — install, login, hooks, push notifications, responding from your phone, multi-device, end-to-end encryption and device pairing, scheduled sessions, the CLI command list, VS Code/Cursor integration, the Docker sandbox, keyboard shortcuts, mobile features, configuration, and troubleshooting. Triggers: any \"how do I … with Codello\", \"what does codello <command> do\", \"why am I not getting notifications\", \"does Codello support …\", or a request to search/look up the Codello docs. Read this BEFORE answering a Codello usage question from memory — the product changes often and memory is stale."
+description: "Answer how-to questions about Codello from its official docs at https://codello.app/docs, not from memory, which goes stale: install, login, notifications, replying from a phone, pairing and encryption, scheduled sessions, CLI commands, IDE and Docker setup, configuration, and troubleshooting."
 allowed-tools: Bash
 ---
 

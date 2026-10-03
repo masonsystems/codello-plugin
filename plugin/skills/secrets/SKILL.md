@@ -1,6 +1,6 @@
 ---
 name: secrets
-description: "Ask the user for an API key, token, password, or any other credential you need to finish a task — `codello secret request` — and use it again later in the session with `codello secret get`. Use this INSTEAD of telling the user to paste a key into the chat, put one in a file, or edit .env themselves: they are usually on a phone and cannot edit files, and a key pasted into the conversation is recorded permanently in the transcript, the terminal scrollback, and the logs. Triggers: you encounter a missing ANTHROPIC_API_KEY / OPENAI_API_KEY / GITHUB_TOKEN / AWS credential / database password / .env value, a command fails with 401 or 403 or \"not authenticated\", a setup step needs a credential you do not have, or you are about to write \"please add your key to\" anything."
+description: "Get a credential from the user with `codello secret request` and reuse it with `codello secret get`, instead of asking them to paste a key into chat or edit .env. Use when an API key, token, or password is missing, or a command fails with 401, 403, or \"not authenticated\"."
 ---
 
 # Ask the user for a secret

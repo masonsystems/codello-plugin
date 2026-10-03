@@ -1,6 +1,6 @@
 ---
 name: waiting
-description: "Tell Codello that this session is waiting on the user — `codello session-status set waiting -m \"<what they have to do>\"`, and `codello session-status clear` when the wait ends. Run set at the end of any turn that leaves something only the user can do: a pull request is up and needs their review or merge, you asked a question or a decision is theirs, a permission or credential you cannot grant yourself, a blocker only they can clear. Codello infers state from hooks and reads a session with a Monitor, a background task, or a dev server still running as busy, so without the declaration the user is never told. Also /codello:waiting. Triggers: you are about to end a turn with a Blocker, a Decision needed, a question, a PR URL for review, or \"waiting on you\" in your reply."
+description: "Run `codello session-status set waiting -m \"<what they must do>\"` at the end of a turn that leaves something only the user can do: a PR to review or merge, a question or decision, a permission or blocker only they can clear. Clear it with `codello session-status clear`. Also /codello:waiting."
 ---
 
 # Declare that this session is waiting on the user
