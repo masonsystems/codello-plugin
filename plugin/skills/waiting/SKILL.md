@@ -74,7 +74,7 @@ No declared status to clear.
 Nothing is armed until the `set` line prints. If the command prints anything else, say so in your reply and end the turn normally:
 
 - `Not in a Codello session`: Codello did not spawn this PTY. Only a `codello claude` session, the web "new session" button, or a scheduled session can declare a status.
-- `Server not running`: the Codello server is down, so there is nothing to record the declaration.
+- `Codello is not running on this host` (older CLIs print `Server not running`): Codello is down on this host, so there is nothing to record the declaration.
 - `A cursor session cannot declare a status`: the declaration fires on a Stop hook, and Cursor has none. Claude Code and Codex sessions can declare; a Cursor session states the wait in its reply instead.
 
 ## Options
