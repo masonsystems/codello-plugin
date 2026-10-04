@@ -1,6 +1,6 @@
 ---
 name: emergency
-description: "Raise an emergency alert to the user now — `codello emergency -m \"<what broke>\"`. It sends a Time Sensitive push to their phone and desktop at once and turns the session red. Use it ONLY for harm that is happening right now and that you cannot fix or contain yourself: a production outage, data loss or corruption, leaked credentials, a destructive action that went wrong, runaway cost, whether you caused it or found it. Any agent in the session may run it, including a subagent or teammate. Never for a blocker, a question, a permission, a failing test, or finished work: those use codello:waiting and codello:done. Also /codello:emergency."
+description: "Run `codello emergency -m \"<what broke>\"` the moment you find harm happening now that you cannot contain: a production outage, data loss, leaked credentials, runaway cost. Sends a Time Sensitive push and turns the session red. Any agent may run it. Never for a blocker, a question, or finished work. Also /codello:emergency."
 ---
 
 # Raise an emergency alert
@@ -68,7 +68,7 @@ codello emergency -m "Nightly export job looping on prod, ~\$40/min in Bedrock c
 
 Run the command with `dangerouslyDisableSandbox: true`. The CLI talks to the local server on `127.0.0.1:3847`, which a sandboxed command cannot reach.
 
-Every line the CLI prints starts with `[codetogo] `, which the examples here leave out. The alert went out when the command prints:
+Every line the CLI prints starts with `[codello] `, which the examples here leave out. The alert went out when the command prints:
 
 ```
 Emergency raised. The user was sent a Time Sensitive push, and the session shows a red emergency status until they open it.
@@ -95,8 +95,8 @@ The rest of the message never reached the user. If the cut part mattered, put it
 Anything else means no push went out. Put the emergency at the top of your reply in plain words either way:
 
 - `Not in a Codello session`: Codello did not spawn this PTY, so there is no session to alert from. Do not mention the command or its error.
-- `Server not running. Start with: codello start` or `Failed to connect to server`: the Codello server is down or unreachable, so it cannot send the push. Say that the alert did not go out.
-- `Failed to raise the emergency: <reason>`: the host refused it or is older than this command. Say that the alert did not go out.
+- `Codello is not running on this host. Start it with: codello start` or `Failed to connect to Codello on this host`: Codello is down or unreachable on this host, so it cannot send the push. Say that the alert did not go out.
+- `Failed to raise the emergency: <reason>`, followed by `Tell the user directly in your reply instead.`: the host refused it or is older than this command. Say that the alert did not go out.
 - `error: required option '-m, --message <text>' not specified`: you left out `-m`. Run it again with a message.
 - `An emergency needs a message: ...`: `-m` was empty or only whitespace. Run it again with a message.
 - `error: unknown command 'emergency'`: this `codello` CLI predates the command. Say that the alert did not go out.
