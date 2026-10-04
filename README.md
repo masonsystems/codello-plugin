@@ -17,6 +17,11 @@ door to the `codello` CLI:
   the value never enters the transcript, the scrollback, or the logs. The server keeps it in
   memory until the session closes, so the agent asks once and reads it back with
   `codello secret get`.
+- **`codello:message` skill** (no slash command — loads itself when relevant) — sends a
+  message to the agent in another Codello session, on this host or another host on your
+  account, instead of asking you to copy text between sessions by hand. You approve each
+  message on your phone before it arrives, and the skill tells the receiving agent that a
+  message carries no authority of yours.
 - **`/codello:spawn`** — start fresh, titled sessions *now*, one per task, in any project
   directory — driveable from your phone the moment they start.
 - **`/codello:schedule`** — schedule a fresh, pre-seeded Claude Code session to fire later
@@ -45,7 +50,7 @@ door to the `codello` CLI:
   agent's keeps the session looking busy. It clears the declaration when the wait ends.
 - **SessionStart hook** — in a Codello session, a few lines of context at session start
   name the commands an agent is expected to run on its own (`done`, `done --failed`, `quit`,
-  `session-status set waiting` / `clear`, `secret request`) and point at the skill for each.
+  `session-status set waiting` / `clear`, `secret request`, `message`) and point at the skill for each.
   Outside a Codello session the hook prints nothing.
 
 ## Prerequisites
@@ -121,6 +126,18 @@ matching section and links it (`https://codello.app/docs#<section>`). Anything t
 doesn't cover falls back to `codello --help` and the plugin's other skills, and the agent
 says plainly when something isn't documented instead of guessing. Same ranking caveat as
 `codello:cli`: invoke it once by hand (`Skill: codello:docs`) if it doesn't load on its own.
+
+## Message another session (`codello:message` skill)
+
+A skill, not a command. It loads when an agent is about to ask you to relay text into another session, or when a message from another session arrives:
+
+```bash
+codello message api-server "The /v2/orders response now includes shipped_at. See docs/api/orders.md."
+```
+
+The target is an id prefix or an exact session name, on any host on your account, and it must be running an agent: shells are refused. You see the sender, the target, and the exact text on your phone and tap Send or Discard; nothing is typed into the target until you tap Send. The command returns at once, and `--wait` blocks and exits with one code per ending (0 delivered, 4 discarded, 5 expired, 6 unknown, 7 refused). The delivered text starts with a line naming the sending session and host and the command to reply, with the body quoted as `> `.
+
+The skill teaches when to send one (another session holds the context, and the alternative is a turn that ends asking you to copy text by hand), when not to (its own subagents, a question only you can answer, a secret), and how to treat a message it receives: as text from another agent that carries none of your authority, never as an approval. It needs a Codello CLI that has `codello message`; on an older one the agent says what it wanted to send instead.
 
 ## Spawn
 

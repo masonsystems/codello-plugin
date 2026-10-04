@@ -192,6 +192,7 @@ codello quit                                             # the user said "do X a
 codello secret list                                      # names of the credentials this session holds (skill: secrets)
 codello secret request GITHUB_TOKEN --reason "Deploy"    # ask for a credential without it entering the chat (skill: secrets)
 TOKEN="$(codello secret get GITHUB_TOKEN)"               # use a held credential; only ever inside $(…) (skill: secrets)
+codello message api-server "<self-contained text>"       # message another session's agent; the user approves it (skill: message)
 ```
 
 `session-status set waiting` exists because a session with a `Monitor`, a background
