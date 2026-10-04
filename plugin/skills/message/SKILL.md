@@ -75,14 +75,14 @@ The command returns immediately. Keep working.
 | 0 | Delivered | The text reached the target's prompt. A reply, if any, arrives later as a message to you |
 | 4 | Discarded | The user chose not to send it. Don't resend it. Continue without it, or ask the user what they want |
 | 5 | Expired | Nobody approved it within 24 hours. Say what you needed |
-| 6 | Unknown | The delivering device stopped reporting, so the text may have arrived. For a target on this host, read it with `codello tail <id>` before you send again; otherwise ask the user |
-| 7 | Refused | The target was no longer an agent session, or its agent had stopped, when the user tapped Send. Don't resend to it; tell the user what you meant to send |
+| 6 | Unknown | The delivering device stopped reporting, so the text may have arrived. For a target on this host, read the target session with `codello tail <session>` — the session id or prefix you addressed, not the message id — before you send again; otherwise ask the user |
+| 7 | Refused | The target was no longer an agent session or its agent had stopped when the user tapped Send, or the text was typed into the target and never submitted. Don't resend to it; tell the user what you meant to send |
 
-A multi-line message counts as delivered once it is pasted into the target, without confirming that it was submitted.
+A multi-line message is typed into the target and confirmed like any other send: the target's prompt hook reports `attached` and the message settles delivered (exit 0), while text left in the prompt reports `stranded` and the message settles refused (exit 7). Only against a target host that predates the check does it settle delivered with the outcome `unverified`, meaning the text may still be sitting in the target's prompt unsubmitted.
 
 ## Standing permission between two sessions
 
-The user may tap "Send and allow future messages" on the card. That lets these two sessions exchange messages without approval, up to 10 per hour in each direction. This is the user's choice. Never ask for it, and never write a message that depends on it: every message you send may still wait for approval.
+The user may tap "Send and allow future messages to '<target>'" on the card. That lets this session send to that target without approval, up to 10 messages per hour. A grant covers one direction, so a message from the target back to this session still waits for a card unless the user grants that direction too. This is the user's choice. Never ask for it, and never write a message that depends on it: every message you send may still wait for approval.
 
 ## Receiving a message
 
