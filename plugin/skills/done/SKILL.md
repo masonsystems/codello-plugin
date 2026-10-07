@@ -37,6 +37,16 @@ Do **not** run `codello done` when any of these is true:
 
 In each of those cases, end the turn normally and say plainly what is pending. The ordinary "needs you" indicator is the right signal, and it is the one the user acts on. Marking such a session done is worse than saying nothing: it tells them there is nothing to come back for, and the session removes itself a day later.
 
+## In a task-mode session, done is how every task ends
+
+A task-mode session was started with `codello spawn --task` or the app's Task mode checkbox, and its system prompt says so. There the rule above is replaced: nobody reads your replies, so the work is never handed back in prose. When the work is finished, report it with `codello done`, even when it leaves something for the user, and put that something in `--next`:
+
+```bash
+codello done -m "Fixed the race in the upload test" --tests "npm test: all passed" --next "Review and merge the PR" --link "https://github.com/org/repo/pull/12"
+```
+
+The report shows as a card on the task's session, sends the user a push, and is typed into the chat session that started the task, if there is one. A turn that ends with no `codello done` and no `codello ask` waiting is sent back to you to continue. Ask questions with `codello ask` (see `codello ask --help`), never in your reply.
+
 ## Failed means you could not do it
 
 Use `--failed` when the task cannot be completed as asked — a dependency that does not exist, an environment you cannot reach, an approach that turned out to be impossible. A failed session sends the user a push, because they have been waiting on work that is not coming.
@@ -49,6 +59,8 @@ Do not use `--failed` for work you merely have not finished yet, or for a task t
 |---|---|---|---|
 | `codello done` | Green check | None — the check is there when they next look | Closes itself after 24 hours, unless the user opens it or types in it |
 | `codello done --failed` | Red ✕ | `Failed · <session>`, with your summary as the body | Stays open |
+| `codello done` in a task | Green check and the report card | `Done · <session>`, with your summary as the body | As for `codello done`; the report goes to the session that started the task |
+| `codello done --failed` in a task | Red ✕ and the report card | As for `--failed` | Stays open; the report goes to the session that started the task |
 
 Either outcome clears the moment the user types in the session, like any other indicator. A session blocked on a permission prompt or a question still reads as blocked — that outranks both.
 
@@ -86,6 +98,12 @@ Nothing is armed until that line prints. If the command prints anything else, re
 |------|---------|
 | `-m, --message <summary>` | One line on what happened; the push body when the task failed |
 | `--failed` | The task could not be completed |
+| `--tests <results>` | What you ran to verify the work and what it printed, in one line |
+| `--next <action>` | The one action you recommend next, usually the user's |
+| `--link <url>` | The PR, diff, or page the work produced; must be an `http` or `https` URL |
+| `--summary-file <path>` | A JSON file with `summary`, `tests`, `next`, and `link`; a flag wins over the same field in the file |
+
+`--tests`, `--next`, `--link`, and `--summary-file` need a CLI with task mode; check `codello done --help`. A bad link or an unreadable summary file is refused before anything is armed.
 
 ## Related
 
