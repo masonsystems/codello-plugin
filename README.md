@@ -43,6 +43,7 @@ door to the `codello` CLI:
   is waiting on you and what for (a PR to review, a question, a permission, a blocker), so the
   row shows the needs-you dot with that line even while a monitor or background task of the
   agent's keeps the session looking busy. It clears the declaration when the wait ends.
+- **`codello:decide` skill** (no slash command — loads itself when relevant) — the agent posts each decision only you can make with `codello decide`: one paragraph you can act on cold, with up to 3 options and its recommendation first. You answer on your phone, and the agent gets every answer back as one prompt once you have answered them all, when you tap Send answers, or ahead of your next message. Needs a `codello` CLI with the `decide` command.
 - **`codello:emergency` skill** (also `/codello:emergency`) — any agent in the session, a
   subagent or teammate included, sends you a Time Sensitive push at once and turns the session
   red when it finds harm happening now that it cannot contain: a production outage, data loss,
@@ -50,7 +51,7 @@ door to the `codello` CLI:
   blockers or questions. Needs a `codello` CLI with the `emergency` command.
 - **SessionStart hook** — in a Codello session, a few lines of context at session start
   name the commands an agent is expected to run on its own (`done`, `done --failed`, `quit`,
-  `session-status set waiting` / `clear`, `secret request`, `emergency`) and point at the skill
+  `session-status set waiting` / `clear`, `decide`, `secret request`, `emergency`) and point at the skill
   for each.
   Outside a Codello session the hook prints nothing.
 
