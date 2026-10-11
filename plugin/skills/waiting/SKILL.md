@@ -24,7 +24,7 @@ Report your result to the agent that spawned you and let it decide what the sess
 Run it silently in the turn that leaves something only the user can do, before you write the final reply. Never mention the command or the status in the reply: "I've marked this session as waiting on your answer" tells the user nothing they need. Set it when:
 
 - A pull request is open and needs their review, approval, or merge.
-- You asked a question, or a decision is theirs to make.
+- You asked a question, or a decision is theirs to make. Post each decision with `codello decide` first (the `decide` skill), so the user answers it on their phone, and keep the decisions out of your reply.
 - A permission you cannot grant yourself: a denied command, a credential, an interactive login, an MFA prompt.
 - A blocker only they can clear: an environment you cannot reach, an account you do not have, a change on a system outside your access.
 - You are handing back a **Blocker** or **Decision needed** item.
