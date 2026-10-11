@@ -27,11 +27,17 @@ The user reads each decision alone, on a phone, possibly hours later, without yo
 2. Why it matters: what goes wrong, or what it costs, either way.
 3. What you recommend.
 
-Give 1 to 3 options with `--options`, separated by `|`. Put your recommendation first; the card marks the first option Recommended. Keep each option a few words. Leave `--options` off when the answer is open-ended. The user can always type their own answer, or dismiss the decision.
+Give 1 to 3 options with `--options`, separated by `|`. Put your recommendation first; the card marks the first option Recommended. Leave `--options` off when the answer is open-ended. The user can always type their own answer, or skip the decision.
+
+Write each option as `Label: one-line description`, so a tap on it makes sense without the paragraph above:
+
+- The label names the choice in a few words. Never a bare letter or number such as `A` or `Option 2`, which means nothing on the card.
+- The description says what that choice does or costs, in one line. Keep the whole option under 120 characters, which every Codello version shows in full.
+- Never write `(recommended)` in an option. The card already marks the first option Recommended, and the words would show twice.
 
 ```bash
-codello decide "The integration tests run against SQLite, but production uses Postgres, so the JSON column queries in reports.ts are never tested. Recommend switching the test database to Postgres; it adds about 20 seconds to a run." --options "Switch to Postgres|Keep SQLite"
-codello decide "The release flag beta_ui now gates the whole app, not the beta UI. Recommend renaming it to new_app before more code reads it." --options "Rename it|Keep beta_ui"
+codello decide "The integration tests run against SQLite, but production uses Postgres, so the JSON column queries in reports.ts are never tested. Recommend switching the test database to Postgres; it adds about 20 seconds to a run." --options "Switch to Postgres: tests match production, runs take 20 seconds longer|Keep SQLite: fast runs, JSON queries stay untested"
+codello decide "The release flag beta_ui now gates the whole app, not the beta UI. Recommend renaming it to new_app before more code reads it." --options "Rename it: new_app everywhere, one PR|Keep beta_ui: no churn, the name stays misleading"
 ```
 
 ## Then declare the wait, and keep the decisions out of your reply
