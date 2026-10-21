@@ -36,8 +36,7 @@ codello sessions --json
 ]
 ```
 
-Prefer `--json` over the human listing in every automated read: the plain output is
-`[codetogo] `-prefixed and reflowed (the CLI's own prefix has not been renamed yet), so parsing it is strictly worse.
+Prefer `--json` over the human listing in every automated read: the plain output is reflowed and prefixed with `[codello] ` on current hosts (`[codetogo] ` on hosts running an older CLI that predates the rename), so parsing it is strictly worse.
 
 **Those are all the field names there are.** Do not guess one. `jq` on a field that does
 not exist prints nothing and exits 0, which looks exactly like "no session matches" — so a

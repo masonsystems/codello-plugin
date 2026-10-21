@@ -26,7 +26,7 @@ The name is what you use to get the value back later, and the user sees it above
 The command blocks until the user answers. It writes an instruction to stderr, and the path of a 0600 file to stdout as its only line:
 
 ```
-[codetogo] Got GITHUB_TOKEN. Put the value where it belongs with shell substitution, …
+[codello] Got GITHUB_TOKEN. Put the value where it belongs with shell substitution, …
 /Users/eric/.codetogo/uploads/<session>/secrets/<id>-GITHUB_TOKEN
 ```
 
