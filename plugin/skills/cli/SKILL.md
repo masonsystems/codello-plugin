@@ -197,6 +197,8 @@ codello decide --file - <<'JSON'  # every decision only the user can make, in on
 [{"question": "<what, why, recommendation>", "options": ["Rec", "Other"], "details": "<the full text being approved>"}]
 JSON
 codello decide "<what, why, recommendation>" --options "Rec|Other" --details "<markdown>"  # one decision
+codello watch <session>                                  # ask the user to let this session decide another's routine prompts (skill: watch-policy)
+codello permit <id> allow                                # as a watcher, allow one prompt once; `pass` sends it to the user (skill: watch-policy)
 codello secret list                                      # names of the credentials this session holds (skill: secrets)
 codello secret request GITHUB_TOKEN --reason "Deploy"    # ask for a credential without it entering the chat (skill: secrets)
 TOKEN="$(codello secret get GITHUB_TOKEN)"               # use a held credential; only ever inside $(…) (skill: secrets)
