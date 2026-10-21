@@ -95,7 +95,7 @@ Do not retry a decline. The user answered. A declined `--refresh` leaves the old
 
 ## How long a secret lasts
 
-The server holds each named secret in memory until the session closes. The server never writes it to disk and never sends it to the cloud. A server restart loses it; when `codello secret get` exits 1 for a name you used before, ask again. The file the request prints is deleted after five minutes whatever you do.
+The server holds each named secret in memory until the session closes. The server never writes it to disk and never sends it to the cloud. It survives `codello restart` and `codello upgrade`, which hand it to the replacement server. A Codello stop, crash, or reboot loses it; when `codello secret get` exits 1 for a name you used before, ask again. The file the request prints is deleted after five minutes whatever you do.
 
 An older Codello server keeps nothing: `codello secret list` prints a note to run `codello upgrade`, and `codello secret get` exits 1. On such a server, read the value from the printed path instead, with `"$(cat "$SECRET_PATH")"`, where `SECRET_PATH="$(codello secret request NAME --reason "…" | tail -1)"`.
 
