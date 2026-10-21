@@ -31,7 +31,7 @@ Your own `codello permit` and `codello tail` calls must not raise permission pro
    }
    ```
 
-3. **Tell the user** in one line what you added and where. Writing under `.claude/` asks the user once; that is expected. The Codello host removes both rules when the watch ends.
+3. **Tell the user** in one line what you added and where. Writing under `.claude/` asks the user once; that is expected. When the watch ends, the Codello host removes the rules you added; a rule the user already had stays.
 
 ## When a `[Codello watch]` message arrives
 
@@ -92,4 +92,4 @@ To keep a changed policy, the user copies this skill into their own skills direc
 
 ## Related
 
-`codello watch status` lists this session's watches, `codello watch stop` ends them, and `codello watch log` prints every decision you made, with the host's rule for any prompt it refused. When a watch ends, the host removes the allow rules this skill added, from the directory this session started in.
+`codello watch status` lists this session's watches, `codello watch stop` ends them, and `codello watch log` prints every decision you made, with the host's rule for any prompt it refused. When a watch ends, the host removes the allow rules this skill added from the directory this session started in; a rule the user already had stays.
