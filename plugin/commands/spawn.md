@@ -17,9 +17,11 @@ It has **no memory of this conversation**, so each prompt must be fully self-con
   directly, or when the tasks aren't really part of this session's work — e.g. a
   task-organization session kicking off independent agents across several projects.
   Each spawned session is a first-class, user-visible session of its own.
+- **Use `/codello:spawn` in task mode** when a task should run unattended to one finished
+  result and report back here: see "Task mode" below.
 - **Use team agents / subagents instead** when the subtasks belong to *this* session's
-  work and need to coordinate with it or report back — spawned sessions can't talk to
-  this one.
+  work and need to coordinate with it as they go. A spawned session reports back only
+  in task mode, and only once, when it finishes.
 
 ## What to do
 
@@ -89,6 +91,31 @@ It has **no memory of this conversation**, so each prompt must be fully self-con
 
 If the task split or a target directory is genuinely ambiguous, show the plan and ask
 first; otherwise spawn without asking — starting quickly is the point.
+
+### Task mode
+
+Add `--task` when the session should work on its own to a finished result instead of
+holding a conversation, for example when the user handed you several independent fixes:
+
+```bash
+cd "<dir>" && codello spawn --task -n "<title>" --prompt-file "<scratchpad>/ctg-spawn-<slug>.txt" claude
+```
+
+A task gets rules on its system prompt: ask the user only with `codello ask`, and
+finish with `codello done`, whose report (summary, tests, next action, link) shows as a
+card on the task, pushes, and is typed into **this** session as a message from the
+task. A turn the task ends any other way is sent back to it, so it never sits waiting
+on prose nobody reads. Only `claude` and `codex` can run as tasks.
+
+- Check the CLI once: `codello spawn --help | grep -c -- --task` prints 1 or more when
+  it has task mode. Without it, spawn normally.
+- The spawn prints what the host made of `--task`. If it says the host is too old or
+  the session started as a chat session, tell the user; the session is running, but
+  it will not report back.
+- Write the prompt so the task can finish without the user: what done looks like, how
+  to verify it, and what to put in `--next` (for example, "Review and merge the PR").
+- When the report arrives here, act on it or relay it to the user; it is the task's
+  only message to you.
 
 ### Notes
 
