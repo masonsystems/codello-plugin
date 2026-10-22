@@ -190,7 +190,10 @@ codello done -m "Merged the retry fix"                   # finished, nothing lef
 codello done --failed -m "Staging DB unreachable"        # could not be done (skill: done)
 codello quit                                             # the user said "do X and quit" and X succeeded (skill: quit)
 codello emergency -m "Prod API 500s; rolled back, failing" # harm happening now you cannot contain; any agent (skill: emergency)
-codello decide "<what, why, recommendation>" --options "Rec|Other" # a decision only the user can make; answers return as one prompt (skill: decide)
+codello decide --file - <<'JSON'  # every decision only the user can make, in one call; answers return as one prompt (skill: decide)
+[{"question": "<what, why, recommendation>", "options": ["Rec", "Other"], "details": "<the full text being approved>"}]
+JSON
+codello decide "<what, why, recommendation>" --options "Rec|Other" --details "<markdown>"  # one decision
 codello secret list                                      # names of the credentials this session holds (skill: secrets)
 codello secret request GITHUB_TOKEN --reason "Deploy"    # ask for a credential without it entering the chat (skill: secrets)
 TOKEN="$(codello secret get GITHUB_TOKEN)"               # use a held credential; only ever inside $(…) (skill: secrets)
