@@ -21,23 +21,35 @@ Use it for a decision only the user can make that you would otherwise write into
 
 ## Write each decision so the user can act on it cold
 
-The user reads each decision alone, on a phone, possibly hours later, without your reply or the code in front of them. Each decision's `question` is one paragraph that says:
+The user reads each decision alone, on a phone, possibly hours later, without your reply or the code in front of them. The card renders each decision's `question` as Markdown, so write it in three parts:
 
-1. What has to be decided, naming the thing: the file, the PR, the flag, the service.
-2. Why it matters: what goes wrong, or what it costs, either way.
-3. What you recommend.
+1. A one-line ask that names the thing: the file, the PR, the flag, the service.
+2. Two to four `- ` bullets: why it matters (what goes wrong, or what it costs), and what each option does.
+3. A `Recommended: …` line.
+
+```markdown
+Switch the integration tests from SQLite to Postgres?
+
+- **Why:** the JSON column queries in reports.ts never run against SQLite, so they are untested.
+- **Switch:** tests match production; each run takes about 20 seconds longer.
+- **Keep SQLite:** runs stay fast; the JSON queries stay untested.
+
+Recommended: Switch to Postgres.
+```
+
+Keep the question that short. Anything longer, such as a multi-step plan, a list of files, or draft text, goes in `details`.
 
 Give 1 to 3 `options`. Put your recommendation first; the card marks the first option Recommended. Leave `options` out when the answer is open-ended. The user can always type their own answer, or skip the decision.
 
-Write each option as `Label: one-line description`, so a tap on it makes sense without the paragraph above:
+Write each option as `Label: one-line description`, so a tap on it makes sense without the question above:
 
 - The label names the choice in a few words. Never a bare letter or number such as `A` or `Option 2`, which means nothing on the card.
 - The description says what that choice does or costs, in one line. Keep the whole option under 120 characters, which every Codello version shows in full.
 - Never write `(recommended)` in an option. The card already marks the first option Recommended, and the words would show twice.
 
-## Put the text being approved in `details`
+## Put the text being approved, and anything longer, in `details`
 
-When a decision approves text (an email, a ticket comment, a PR description, a message), put that text in full in the decision's `details`, as Markdown: recipients, subject, and body. The card shows it behind a Details toggle under the question. Never write "see the reply", "the draft above", or "the note I drafted earlier": the user answers from the card, and your reply may be hours of scrolling away. `details` holds up to 16 KB.
+When a decision rests on a multi-step plan or other material longer than the bullets, put it in `details`. When a decision approves text (an email, a ticket comment, a PR description, a message), put that text in full in the decision's `details`, as Markdown: recipients, subject, and body. The card shows it behind a Details toggle under the question. Never write "see the reply", "the draft above", or "the note I drafted earlier": the user answers from the card, and your reply may be hours of scrolling away. `details` holds up to 16 KB.
 
 ## Post every decision in one call
 
@@ -47,11 +59,11 @@ Post all of a turn's decisions in one call, with a JSON list on stdin. Each entr
 codello decide --file - <<'JSON'
 [
   {
-    "question": "The integration tests run against SQLite, but production uses Postgres, so the JSON column queries in reports.ts are never tested. Recommend switching the test database to Postgres; it adds about 20 seconds to a run.",
+    "question": "Switch the integration tests from SQLite to Postgres?\n\n- **Why:** the JSON column queries in reports.ts never run against SQLite, so they are untested.\n- **Switch:** tests match production; each run takes about 20 seconds longer.\n- **Keep SQLite:** runs stay fast; the JSON queries stay untested.\n\nRecommended: Switch to Postgres.",
     "options": ["Switch to Postgres: tests match production, runs take 20 seconds longer", "Keep SQLite: fast runs, JSON queries stay untested"]
   },
   {
-    "question": "Dana asked when the export fix ships. Recommend sending this reply, which promises Thursday.",
+    "question": "Send Dana the reply about when the export fix ships?\n\n- **Why:** she asked for a date, and the reply promises Thursday.\n- **Send it:** Dana gets the date today.\n- **Hold it:** no promise until the fix merges.\n\nRecommended: Send it.",
     "options": ["Send it: Dana gets the date today", "Hold it: no promise until the fix merges"],
     "details": "**To:** dana@example.com\n\n**Subject:** Re: Export fix\n\nHi Dana,\n\nThe export fix ships Thursday."
   }
@@ -59,7 +71,7 @@ codello decide --file - <<'JSON'
 JSON
 ```
 
-A lone decision can also go on the command line: `codello decide "<paragraph>" --options "A|B" --details "<markdown>"`.
+A lone decision can also go on the command line: `codello decide "<question>" --options "A|B" --details "<markdown>"`. Write `\n` line breaks in the JSON string; on the command line, use real line breaks inside the quotes.
 
 ## Then declare the wait, and keep the decisions out of your reply
 
@@ -70,7 +82,7 @@ After the `codello decide` call, run `codello session-status set waiting -m "<n>
 Run the command with `dangerouslyDisableSandbox: true`. The CLI talks to the local server, which a sandboxed command cannot reach.
 
 - Exit 0 means the host holds every decision. stdout is one decision id per line, in the order you posted them, and nothing else.
-- Exit 1 means nothing was posted, and stderr says why: a bad entry (each one is named), not in a Codello session, Codello not running, or a Codello server too old to take decisions. Fix a bad entry and post again. If the CLI rejects `--file` or `--details` as an unknown option, it is too old for them: post one `codello decide "<paragraph>" --options "..."` per decision instead, and put any text being approved in that paragraph. Otherwise put the decisions in your reply, and say what stopped the command.
+- Exit 1 means nothing was posted, and stderr says why: a bad entry (each one is named), not in a Codello session, Codello not running, or a Codello server too old to take decisions. Fix a bad entry and post again. If the CLI rejects `--file` or `--details` as an unknown option, it is too old for them: post one `codello decide "<question>" --options "..."` per decision instead, and put any text being approved in that question. Otherwise put the decisions in your reply, and say what stopped the command.
 
 ## Options
 
@@ -78,9 +90,9 @@ Run the command with `dangerouslyDisableSandbox: true`. The CLI talks to the loc
 |------|---------|
 | `codello decide --file -` | Post a JSON list of decisions read from stdin, in one call |
 | `codello decide --file <path>` | The same, read from a file |
-| `codello decide "<paragraph>"` | Post one decision the user answers in their own words |
-| `codello decide "<paragraph>" --options "A\|B\|C"` | Offer up to 3 options; the first is your recommendation |
-| `codello decide "<paragraph>" --details "<markdown>"` | Show the text being approved behind a Details toggle |
+| `codello decide "<question>"` | Post one decision the user answers in their own words |
+| `codello decide "<question>" --options "A\|B\|C"` | Offer up to 3 options; the first is your recommendation |
+| `codello decide "<question>" --details "<markdown>"` | Show the text being approved behind a Details toggle |
 
 ## Related
 
