@@ -184,7 +184,8 @@ The commands that report on the task itself also target this session implicitly,
 has its own skill with the rules for when to run it:
 
 ```bash
-codello session-status set waiting -m "Review PR #12"   # this turn ends needing the user (skill: waiting)
+codello session-status set blocked -m "Sign in to AWS"  # work stopped until the user acts; shows red (skill: waiting)
+codello session-status set waiting -m "Review PR #12"   # this turn ends on something the user may answer; shows amber (skill: waiting)
 codello session-status clear                             # the wait ended without them replying
 codello done -m "Merged the retry fix"                   # finished, nothing left for the user (skill: done)
 codello done --failed -m "Staging DB unreachable"        # could not be done (skill: done)
@@ -199,11 +200,11 @@ codello secret request GITHUB_TOKEN --reason "Deploy"    # ask for a credential 
 TOKEN="$(codello secret get GITHUB_TOKEN)"               # use a held credential; only ever inside $(…) (skill: secrets)
 ```
 
-`session-status set waiting` exists because a session with a `Monitor`, a background
+`session-status set blocked` and `set waiting` exist because a session with a `Monitor`, a background
 `Bash`, or a dev server still running reads as `working` to every inference above, so a
 turn that ends on "PR ready for review" is never surfaced. The declaration outranks the
-inference (`state` becomes `waiting-on-you`), carries the `-m` line as `declaredMessage`,
-and is retired by the user's reply, `clear`, or `done`.
+inference: `state` becomes `waiting-on-you` for a declared wait and a declared block alike,
+the same value an open permission prompt shows. Either declaration carries the `-m` line as `declaredMessage` and is retired by the user's reply, `clear`, or `done`.
 
 Outside a Codello session `CODELLO_SESSION` is unset and these exit 1 with "Not in a
 Codello session" — that's the honest answer, not a bug to work around. `copy` is the one

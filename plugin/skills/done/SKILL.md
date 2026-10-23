@@ -41,7 +41,7 @@ In each of those cases, end the turn normally and say plainly what is pending. T
 
 Use `--failed` when the task cannot be completed as asked — a dependency that does not exist, an environment you cannot reach, an approach that turned out to be impossible. A failed session sends the user a push, because they have been waiting on work that is not coming.
 
-Do not use `--failed` for work you merely have not finished yet, or for a task that is blocked on the user. Blocked is not failed: leave the session waiting and say what you need, and declare the wait with `codello session-status set waiting -m "<what you need>"` (the `waiting` skill, `/codello:waiting`) so the session row shows it even while a background task of yours keeps the session looking busy. Never run `done` and `set waiting` in the same turn: `done` retires the declaration.
+Do not use `--failed` for work you merely have not finished yet, or for a task that is blocked on the user. Blocked is not failed: leave the session open and say what you need, and declare it with `codello session-status set blocked -m "<what you need>"` (the `waiting` skill, `/codello:waiting`) so the session row shows it even while a background task of yours keeps the session looking busy. Never run `done` and `set blocked` or `set waiting` in the same turn: `done` retires the declaration.
 
 ## What each outcome does
 

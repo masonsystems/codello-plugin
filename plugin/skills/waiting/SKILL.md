@@ -1,17 +1,23 @@
 ---
 name: waiting
-description: "Run `codello session-status set waiting -m \"<what they must do>\"` at the end of a turn that leaves something only the user can do: a PR to review or merge, a question or decision, a permission or blocker only they can clear. Clear it with `codello session-status clear`. Also /codello:waiting."
+description: "Run `codello session-status set blocked -m \"<what they must do>\"` at the end of a turn when work cannot continue until the user acts: a sign-in, access or a permission you cannot grant, a credential, a Blocker. Run `codello session-status set waiting -m \"<what they can do>\"` when the turn ends on something the user may answer: a PR to review or merge, a question or decision, a result they may follow up on. Clear either with `codello session-status clear`. Also /codello:waiting."
 ---
 
-# Declare that this session is waiting on the user
+# Declare that this session is blocked or waiting on the user
 
 Codello shows the user a needs-you dot when a turn ends on a question or a permission prompt. It cannot see a wait that you describe in prose, and if anything you started is still running (a `Monitor`, a background `Bash`, a subagent, a dev server) the session reads as busy however plainly your reply says otherwise. On September 18, 2026 that cost five hours of a session waiting silently. The declaration replaces the inference.
 
 ```bash
+codello session-status set blocked -m "Sign in to the AWS console so I can read the staging logs"
 codello session-status set waiting -m "PR ready for review: https://github.com/org/repo/pull/123"
 ```
 
-The command arms the declaration and returns at once. It fires when the current turn ends, exactly as `codello done` does: the session row shows the needs-you dot with your `-m` line, and one push goes out carrying the same line. Nothing you do afterward moves it, not a watcher firing, not the turn that watcher starts.
+The command arms the declaration and returns at once. It fires when the current turn ends, exactly as `codello done` does: the session row shows the status with your `-m` line, and one push goes out carrying the same line. Nothing you do afterward moves it, not a watcher firing, not the turn that watcher starts.
+
+The two statuses look different on the user's devices:
+
+- `blocked` shows red, the same as a permission prompt, and the push reads `Blocked · <session>` with your line. Use it when nothing more happens until the user acts.
+- `waiting` shows amber. Use it when you finished or answered and the user may reply.
 
 ## Only the session's lead agent runs this
 
@@ -21,15 +27,24 @@ Report your result to the agent that spawned you and let it decide what the sess
 
 ## When to set it
 
-Run it silently in the turn that leaves something only the user can do, before you write the final reply. Never mention the command or the status in the reply: "I've marked this session as waiting on your answer" tells the user nothing they need. Set it when:
+Run it silently in the turn that leaves something for the user, before you write the final reply. Never mention the command or the status in the reply: "I've marked this session as waiting on your answer" tells the user nothing they need.
+
+Set `blocked` when your work cannot continue until the user acts:
+
+- A sign-in, an interactive login, or an MFA prompt.
+- Access or a permission you cannot grant yourself: a denied command, an environment you cannot reach, an account you do not have, a change on a system outside your access.
+- A credential you need and do not hold.
+- You are handing back a **Blocker** item.
+
+Set `waiting` when the user has something to do but you are not stuck on it:
 
 - A pull request is open and needs their review, approval, or merge.
-- You asked a question, or a decision is theirs to make. Post every decision in one `codello decide --file -` call first (the `decide` skill), with any text being approved in full in its `details`, so the user answers it on their phone, and keep the decisions out of your reply.
-- A permission you cannot grant yourself: a denied command, a credential, an interactive login, an MFA prompt.
-- A blocker only they can clear: an environment you cannot reach, an account you do not have, a change on a system outside your access.
-- You are handing back a **Blocker** or **Decision needed** item.
+- You asked a question, or a decision is theirs to make, and you could keep going without the answer. Post every decision in one `codello decide --file -` call first (the `decide` skill), with any text being approved in full in its `details`, so the user answers it on their phone, and keep the decisions out of your reply. A turn that posts decisions ends with `set waiting`.
+- You finished or answered, and the user may follow up on the result.
 
-One declaration per wait. A second `set` replaces the line on the row and sends another push, so declare once and declare again only when what the user has to do has changed, or when a declaration was dropped.
+When both apply, set `blocked`: the user needs to know first that work has stopped.
+
+One declaration per wait. A second `set` replaces the status and the line on the row and sends another push, so declare once and declare again only when what the user has to do has changed, or when a declaration was dropped.
 
 The declaration fires at the end of the turn. If the user types before the turn ends, the armed declaration is dropped: no dot, no push, because their message may already be the answer. If that message did not answer you, declare again in the next turn.
 
@@ -44,7 +59,7 @@ You do not need to clear it when the user replies. Their message, typed in the t
 
 ## Never in the same turn as done
 
-`codello done` retires a declared wait before it records its own outcome, so `set waiting` followed by `done` in one turn leaves the session marked done with the wait gone. The two say opposite things: done means nothing is left for the user, waiting means something is. Pick one. The `done` skill's rule applies: an open PR, a question, a decision, or a follow-up means waiting, not done.
+`codello done` retires a declared status before it records its own outcome, so `set blocked` or `set waiting` followed by `done` in one turn leaves the session marked done with the declaration gone. They say opposite things: done means nothing is left for the user, blocked and waiting mean something is. Pick one. The `done` skill's rule applies: an open PR, a question, a decision, or a follow-up means waiting, and a task stuck on the user means blocked, not done.
 
 ## Write the message for a lock screen
 
@@ -54,24 +69,45 @@ You do not need to clear it when the user replies. Their message, typed in the t
 
 Run the command with `dangerouslyDisableSandbox: true`. The CLI talks to the local server on `127.0.0.1:3847`, which a sandboxed command cannot reach.
 
-Expect, for `set`:
+Expect, for `set waiting`:
 
 ```
-Status set to waiting. When this turn ends the session shows as waiting on you and you are notified.
-It stays that way until you reply, or the agent runs `codetogo session-status clear` or `codetogo done`.
+[codello] Status set to waiting. When this turn ends the session shows as waiting on you and you are notified.
+[codello] It stays that way until you reply, or the agent runs `codello session-status clear` or `codello done`.
+```
+
+For `set blocked`:
+
+```
+[codello] Status set to blocked. When this turn ends the session shows as blocked on you and you are notified.
+[codello] It stays that way until you reply, or the agent runs `codello session-status clear` or `codello done`.
 ```
 
 And for `clear`, one of:
 
 ```
-Declared status cleared. This session goes back to the state Codello infers.
+[codello] Declared status cleared. This session goes back to the state Codello infers.
 ```
 
 ```
-No declared status to clear.
+[codello] No declared status to clear.
 ```
 
-Nothing is armed until the `set` line prints. If the command prints anything else, say so in your reply and end the turn normally:
+Nothing is armed until the `set` line prints.
+
+If `set blocked` exits 1 because Codello is too old for it, run `codello session-status set waiting` with the same `-m` line, and do not end the turn yet. When the Codello server on the host predates `blocked`, the output says "does not support 'blocked'", and names the command to run with your own line in place of `<your message>`:
+
+```
+codello: this host does not support 'blocked' yet. Update the host, or run: codello session-status set waiting -m "<your message>"
+```
+
+When the `codello` CLI itself predates `blocked`, the output says:
+
+```
+[codello] Unknown status 'blocked' — the only declarable status is 'waiting'
+```
+
+If the command prints anything else, say so in your reply and end the turn normally:
 
 - `Not in a Codello session`: Codello did not spawn this PTY. Only a `codello claude` session, the web "new session" button, or a scheduled session can declare a status.
 - `Server not running`: the Codello server is down, so there is nothing to record the declaration.
@@ -81,7 +117,8 @@ Nothing is armed until the `set` line prints. If the command prints anything els
 
 | Command | Purpose |
 |------|---------|
-| `codello session-status set waiting -m <text>` | Declare the wait; `-m` is the one line shown on the row and in the push |
+| `codello session-status set blocked -m <text>` | Declare that work has stopped until the user acts; `-m` is the one line shown on the row and in the push |
+| `codello session-status set waiting -m <text>` | Declare that the user may reply; `-m` is the one line shown on the row and in the push |
 | `codello session-status clear` | Withdraw the declaration; the session goes back to what Codello infers |
 
 ## Related
