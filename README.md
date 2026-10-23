@@ -188,16 +188,18 @@ permission prompt. An agent that ends a turn on something you may answer runs
 state from hooks, and a session with a `Monitor`, a background task, or a dev server still
 running reads as busy no matter what the agent's reply says, so before this the wait was
 invisible until you opened the session. The declaration outranks the inference: the row shows
-the needs-you dot with the agent's line, you get one push carrying it, and nothing the agent
+the red blocked or amber waiting status with the agent's line, you get one push carrying it, and nothing the agent
 does afterward moves it. Your reply retires it, as do dismissing the session from the
 dashboard, `codello session-status clear`, and `codello done`. The skill tells the agent to set `blocked` for a sign-in, access or a
 permission it cannot grant, a credential, or a blocker only you can clear, and `waiting` for a
 PR awaiting review, a question or decision, or a result you may follow up on. It clears the
-declaration when the wait ends another way, and never runs it in the same turn as `done`. On a
-Codello host too old for `blocked`, the agent sets `waiting` with the same line.
+declaration when the wait ends another way, and never runs it in the same turn as `done`. When the
+Codello server or CLI is too old for `blocked`, the agent sets `waiting` with the same line.
 
-Cursor sessions cannot declare a status (no Stop hook fires the declaration); Claude Code and
-Codex sessions can.
+Claude Code, Codex, and Cursor sessions can declare a status. A Cursor session needs a
+Codello CLI restarted after [COD-1539](https://linear.app/masonsystems/issue/COD-1539/), and
+its declaration fires when an interactive turn completes; a `cursor-agent --print` run never
+fires it.
 
 ## Raise an emergency
 

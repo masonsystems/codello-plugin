@@ -72,31 +72,40 @@ Run the command with `dangerouslyDisableSandbox: true`. The CLI talks to the loc
 Expect, for `set waiting`:
 
 ```
-Status set to waiting. When this turn ends the session shows as waiting on you and you are notified.
-It stays that way until you reply, or the agent runs `codetogo session-status clear` or `codetogo done`.
+[codello] Status set to waiting. When this turn ends the session shows as waiting on you and you are notified.
+[codello] It stays that way until you reply, or the agent runs `codello session-status clear` or `codello done`.
 ```
 
 For `set blocked`:
 
 ```
-Status set to blocked. When this turn ends the session shows as blocked on you and you are notified.
-It stays that way until you reply, or the agent runs `codetogo session-status clear` or `codetogo done`.
+[codello] Status set to blocked. When this turn ends the session shows as blocked on you and you are notified.
+[codello] It stays that way until you reply, or the agent runs `codello session-status clear` or `codello done`.
 ```
 
 And for `clear`, one of:
 
 ```
-Declared status cleared. This session goes back to the state Codello infers.
+[codello] Declared status cleared. This session goes back to the state Codello infers.
 ```
 
 ```
-No declared status to clear.
+[codello] No declared status to clear.
 ```
 
-Nothing is armed until the `set` line prints. If `set blocked` exits 1 with this line, the Codello server predates the `blocked` status, so run `codello session-status set waiting` with the same `-m` line instead:
+Nothing is armed until the `set` line prints.
+
+If `set blocked` exits 1 because Codello is too old for it, run `codello session-status set waiting` with the same `-m` line, and do not end the turn yet. When the Codello server on the host predates `blocked`, the output says "too old to declare 'blocked'":
 
 ```
-codello: this host does not support 'blocked' yet. Update the host, or run: codello session-status set waiting -m "<same message>"
+[codello] The Codello server on this host is too old to declare 'blocked'. Update Codello on this host to use it.
+[codello] Until then, `codello session-status set waiting` works.
+```
+
+When the `codello` CLI itself predates `blocked`, the output says:
+
+```
+[codello] Unknown status 'blocked' — the only declarable status is 'waiting'
 ```
 
 If the command prints anything else, say so in your reply and end the turn normally:
