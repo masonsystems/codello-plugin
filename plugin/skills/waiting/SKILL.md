@@ -95,11 +95,10 @@ And for `clear`, one of:
 
 Nothing is armed until the `set` line prints.
 
-If `set blocked` exits 1 because Codello is too old for it, run `codello session-status set waiting` with the same `-m` line, and do not end the turn yet. When the Codello server on the host predates `blocked`, the output says "too old to declare 'blocked'":
+If `set blocked` exits 1 because Codello is too old for it, run `codello session-status set waiting` with the same `-m` line, and do not end the turn yet. When the Codello server on the host predates `blocked`, the output says "does not support 'blocked'", and names the command to run with your own line in place of `<your message>`:
 
 ```
-[codello] The Codello server on this host is too old to declare 'blocked'. Update Codello on this host to use it.
-[codello] Until then, `codello session-status set waiting` works.
+codello: this host does not support 'blocked' yet. Update the host, or run: codello session-status set waiting -m "<your message>"
 ```
 
 When the `codello` CLI itself predates `blocked`, the output says:
