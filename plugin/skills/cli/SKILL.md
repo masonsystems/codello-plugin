@@ -203,9 +203,8 @@ TOKEN="$(codello secret get GITHUB_TOKEN)"               # use a held credential
 `session-status set blocked` and `set waiting` exist because a session with a `Monitor`, a background
 `Bash`, or a dev server still running reads as `working` to every inference above, so a
 turn that ends on "PR ready for review" is never surfaced. The declaration outranks the
-inference: `state` becomes `waiting-on-you` for a declared wait, and `blocked-on-you`, the
-same value an open permission prompt shows, for a declared block. Either declaration carries
-the `-m` line as `declaredMessage` and is retired by the user's reply, `clear`, or `done`.
+inference: `state` becomes `waiting-on-you` for a declared wait and a declared block alike,
+the same value an open permission prompt shows. Either declaration carries the `-m` line as `declaredMessage` and is retired by the user's reply, `clear`, or `done`.
 
 Outside a Codello session `CODELLO_SESSION` is unset and these exit 1 with "Not in a
 Codello session" — that's the honest answer, not a bug to work around. `copy` is the one
