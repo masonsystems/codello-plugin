@@ -8,7 +8,7 @@ You are the front door to `codello schedule`. A scheduled run launches a **fresh
 
 A schedule fires in one of two modes:
 
-- **Background** (`--background`): a headless `claude -p` child process. It has no session row, no viewer, and no permission prompt. It reads the same permission settings as any Claude Code run in that directory, including `defaultMode`. A tool call it is not allowed to make is denied, and the run is recorded as failed with the denied tool names. When a background run finishes, its final message is its result: the first 200 characters show on the run's row, and the full transcript is on the **Background runs** page and in `codello schedule runs`. A failed run sends a push to the user's phone and a bell notification.
+- **Background** (`--background`): a headless `claude -p` child process. It has no session row, no viewer, and no permission prompt. It reads the same permission settings files as any Claude Code run in that directory, including `defaultMode`. A tool call that Claude Code denies for a missing allow rule is recorded as a permission denial, and the run is recorded as failed with the denied tool names. When a background run finishes, its final message is its result: the first 200 characters show on the run's row, and the full transcript is on the **Background runs** page and in `codello schedule runs`. A failed run sends a push to the user's phone and a bell notification.
 - **Interactive**: a `claude "<prompt>"` session in a PTY. It shows up in the session list, the user can open it from a phone, and it can stop and ask a question or request a tool permission.
 
 `$ARGUMENTS` is the user's request. Handle three shapes:
@@ -56,25 +56,40 @@ Otherwise the user is describing **what** to do and **when**. Do this:
 
 3. **For a background schedule, check its permissions.** Nobody is there to approve a tool when it fires, so find out now whether the run is allowed to do its work.
 
-   a. **Read the effective `defaultMode` for that directory.** Read `permissions.defaultMode` from these files in order; the last one that sets it wins, and a missing file contributes nothing:
-      ```bash
-      cat ~/.claude/settings.json
-      cat <dir>/.claude/settings.json
-      cat <dir>/.claude/settings.local.json
-      ```
+   The host starts a background run as `claude -p` with no `--permission-mode` and no `--settings`, so the run's permissions come only from the settings files below. Rules from [Settings files and precedence](https://code.claude.com/docs/en/settings) and [Permission modes](https://code.claude.com/docs/en/permission-modes) decide what applies.
 
-   b. **If the effective `defaultMode` is `auto` or `bypassPermissions`, add no allow rules.** The run does not need any. In `auto` mode the auto-mode classifier judges each tool call as it happens, so commands with no allow rule still run. Tell the user only this: an action the auto-mode classifier blocks is denied, and that fails the run. The `codello schedule add --background` plan also prints "Write, Edit and Bash are denied by default"; that line does not apply in these modes, so do not act on it. Go on to step 4.
+   a. **Find the four settings sources for that directory.** A missing file contributes nothing.
+      - **Managed:** `/Library/Application Support/ClaudeCode/managed-settings.json` and `managed-settings.d/*.json` beside it on macOS, or `/etc/claude-code/` on Linux. Managed settings outrank every other file. An organization can also deliver them through MDM or the claude.ai console, which leave no file to read; if the user's account belongs to an organization, say that a policy you could not read may still apply.
+      - **User:** `~/.claude/settings.json`.
+      - **Shared project:** `<dir>/.claude/settings.json`, read from the schedule's working directory itself.
+      - **Project local:** `.claude/settings.local.json` at the git repository root, not in `<dir>`, when `<dir>` is inside a repository. In a git worktree it is at the main checkout's root. This command prints that root in both cases:
+        ```bash
+        dirname "$(git -C <dir> rev-parse --path-format=absolute --git-common-dir)"
+        ```
+        The file stays at `<dir>/.claude/settings.local.json` when `<dir>` is not in a git repository or the repository root is the home directory. Claude Code also still reads a `<dir>/.claude/settings.local.json` that an older version left there.
 
-   c. **Otherwise, list the tools the prompt needs, one by one.** Running a test suite or a build needs `Bash` for that exact command. Editing, fixing, or generating files needs `Edit` and `Write`. Reading a URL or an API needs `WebFetch` or `WebSearch`. Talking to a service through MCP needs that MCP tool. Committing, pushing, or opening a PR needs `Bash(git …)` and `Bash(gh …)`. A read-only task that only greps and reads the repository needs nothing added: `Read`, `Grep`, and `Glob` are available without an allow entry.
+   b. **Work out the effective `permissions.defaultMode`.**
+      - A managed `defaultMode` wins. If managed settings set `permissions.disableAutoMode` to `"disable"`, auto mode is unavailable; if they set `permissions.disableBypassPermissionsMode` to `"disable"`, bypass mode is unavailable.
+      - `auto` and `bypassPermissions` count only from managed settings or `~/.claude/settings.json`. A project or local file that sets either one does not apply it: for `auto`, Claude Code falls back to its built-in default, which is Manual (`default`) in a `-p` run, even when `~/.claude/settings.json` says `auto`; for `bypassPermissions`, the run starts in Manual.
+      - Every other value (`default`, `acceptEdits`, `plan`, `dontAsk`) follows precedence: project local over shared project over user.
+      - With no value anywhere, a `-p` run starts in Manual mode.
+      - Auto mode also needs a model that supports it. Check the run's model against the requirements in [Permission modes](https://code.claude.com/docs/en/permission-modes); if it is not on the list, do not count on auto mode.
 
-   d. **Compare that list with the `permissions.allow` and `permissions.deny` entries** in the same three files. A deny entry wins over any allow entry. Then take exactly one of three outcomes:
+   c. **If the effective mode is `auto` or `bypassPermissions`, add no allow rules.** In `auto` mode the auto-mode classifier judges each tool call as it happens, so commands with no allow rule can still run. Tell the user this: an action the classifier blocks does not run, and Claude keeps working, so the run can still finish as succeeded with the work undone. Have the prompt's final message state anything it could not do (step 6). The `codello schedule add --background` plan prints "Write, Edit and Bash are denied by default"; that line does not apply in these modes, so do not act on it. Managed deny rules still apply in any mode. Go on to step 4.
+
+   d. **Otherwise, list the tools the prompt needs, one by one.** Running a test suite or a build needs `Bash` for that exact command. Editing, fixing, or generating files needs `Edit` and `Write`. Reading a URL or an API needs `WebFetch` or `WebSearch`. Talking to a service through MCP needs that MCP tool. Committing, pushing, or opening a PR needs `Bash(git *)` and `Bash(gh *)`. A read-only task that only greps and reads the repository needs nothing added: `Read`, `Grep`, and `Glob` are available without an allow entry. What the mode already grants:
+      - **`acceptEdits`** already allows `Edit` and `Write` inside the working directory, plus `mkdir`, `touch`, `rm`, `rmdir`, `mv`, `cp`, and `sed` there. Other `Bash` commands, and edits outside the directory, still need allow rules.
+      - **`plan`** never edits files in a `-p` run, and `Bash` commands outside the built-in read-only set are denied. If the task writes anything, refuse the background schedule and offer an interactive one.
+      - **`default`** (Manual) and **`dontAsk`** grant nothing beyond reading.
+
+   e. **Compare that list with the `permissions.allow` and `permissions.deny` entries** from all four sources. Allow lists merge across files. A deny entry wins over any allow entry, and managed deny rules apply in every mode. If managed settings set `allowManagedPermissionRulesOnly`, only managed allow rules count, so an allow rule you add to a user or project file does nothing. Then take exactly one of three outcomes:
 
       - **Every tool the task needs is already allowed.** Say so, name the entries that cover it, and go on to schedule.
-      - **Something is missing and could reasonably be granted.** Propose the exact `allow` entries and the file to put them in, then **ask the user to approve adding them** and wait. Do not add a permission the user has not approved in that turn, and do not schedule until the entries are in place. Once approved, add them yourself and keep the rest of the file as it was:
+      - **Something is missing and could reasonably be granted.** Propose the exact `allow` entries and the file to put them in, then **ask the user to approve adding them** and wait. Do not add a permission the user has not approved in that turn, and do not schedule until the entries are in place. Put them in the project local file from step 3a, at the repository root, unless the user names another file. Once approved, add them yourself and keep the rest of the file as it was:
         ```
-        `nightly-tests` needs `Bash(npm test:*)` and `Bash(npx vitest:*)`, and neither is allowed in ~/src/app. Add these two to permissions.allow in ~/src/app/.claude/settings.local.json?
+        `nightly-tests` needs `Bash(npm run test *)` and `Bash(npx vitest *)`, and neither is allowed in ~/src/app/packages/api. Add these two to permissions.allow in ~/src/app/.claude/settings.local.json, the repository's local settings file?
         ```
-      - **A needed tool is denied outright, or the user declines the allow entries.** Do not schedule the background run. Say which tool would be denied and what that costs: the run fails and the work does not happen. Offer an interactive schedule instead, because an interactive session can ask at run time.
+      - **A needed tool is denied outright, managed settings block the rule you would add, or the user declines the allow entries.** Do not schedule the background run. Say which tool would be denied and what that costs: the work does not happen. Offer an interactive schedule instead, because an interactive session can ask at run time.
 
       Never work around a missing permission. There is no bypass flag, and a background run that is not allowed to do the work is not worth scheduling.
 
@@ -95,9 +110,9 @@ Otherwise the user is describing **what** to do and **when**. Do this:
 
    **Write a background prompt for a run nobody is watching.** Say so in the prompt itself: never ask the user a question, never wait for input, and choose a reasonable default instead of pausing on an ambiguity.
 
-   - **Make the final message the result.** Tell the run to end with a message whose first sentence says whether the check passed or failed and what it found. Only the first 200 characters show on the run's row, so put the verdict there, not a preamble. A background prompt that ends with "let me know if you want me to…" has wasted the run.
+   - **Make the final message the result.** Tell the run to end with a message whose first sentence says whether the check passed or failed and what it found. Only the first 200 characters show on the run's row, so put the verdict there, not a preamble. Tell the run to name every action that was blocked or skipped and what that left unchecked, because a blocked action does not always fail the run. A background prompt that ends with "let me know if you want me to…" has wasted the run.
    - **Do not depend on session commands.** A background run has no Codello session, so `codello done`, `codello session-status`, `codello decide`, and `codello emergency` have nothing to report to. Leave them out of a background prompt, and drop them from any prompt you adapt from an interactive one.
-   - **Plan how a finding reaches the user.** A finished run never pushes; only a failed run does, and a run fails only on a denied tool call, a non-zero exit, or a Claude Code error. No Codello command lets a background run fail itself or send a push. If the user must be alerted when the job finds a problem, write the prompt to send the alert with a notification tool the run is already allowed to call in that directory, and name that tool in the prompt. If no such tool exists, tell the user that a finding shows up only on the run's row and in `codello schedule runs`.
+   - **Plan how a finding reaches the user.** A finished run never pushes; only a failed run does, and a run fails only on a tool call Claude Code records as a permission denial, a non-zero exit, or a Claude Code error. No Codello command lets a background run fail itself or send a push. If the user must be alerted when the job finds a problem, write the prompt to send the alert with a notification tool the run is already allowed to call in that directory, and name that tool in the prompt. If no such tool exists, tell the user that a finding shows up only on the run's row and in `codello schedule runs`.
 
 7. **Validate with `--dry-run`.** It checks that the directory is a trusted Claude project, parses the trigger, and prints the computed next-fire time and the mode. It saves nothing:
    ```bash
