@@ -20,8 +20,8 @@ door to the `codello` CLI:
 - **`/codello:spawn`** — start fresh, titled sessions *now*, one per task, in any project
   directory — driveable from your phone the moment they start.
 - **`/codello:schedule`** — schedule a fresh, pre-seeded Claude Code session to fire later
-  on your own dev machine, interactively or as a headless background run whose permissions
-  are checked before it's scheduled.
+  on your own dev machine, as a headless background run (the default for unattended jobs) or
+  as an interactive session when the run must ask you something.
 - **`/codello:handoff`** · **`/codello:resume`** — write a handoff another agent (or a
   fresh session) can pick up, and resume from one.
 - **`/codello:compact`** — reset a *live* Codello session's context in place: like
@@ -162,28 +162,16 @@ running for the schedule to fire.
 
 ### Background runs
 
-A schedule fires in one of two modes, and the command picks one for you: **interactive**,
-a normal session in the list that you can open from your phone and that can stop to ask
-you something, or **background** (`--background`), a headless `claude -p` child with no
-session row, no viewer, and no permission prompt of any kind. Unattended work — run the
-tests, audit the deps, sweep the PRs, "and tell me if anything broke" — goes to background;
-anything you'll want to steer stays interactive. Say which you want and that wins.
+A schedule fires in one of two modes, and the command picks one for you. **Background** (`--background`) is a headless `claude -p` child with no session row, no viewer, and no permission prompt. **Interactive** is a normal session in the list that you can open from your phone and that can stop to ask you something. Background is the default for any unattended job that needs no answer from you while it runs: checks, verifications, reports, sends of drafts you already approved, and sweeps. The command schedules an interactive session only when the run must ask you something partway through, or when you ask for a session. Say which you want and that wins.
 
-A headless run is granted nothing beyond reading: `Bash`, `Edit`, and `Write` are all denied
-unless the schedule's working directory allows them, and there is no bypass. So the command
-**settles permissions before it schedules**. It enumerates the tools your prompt needs (a
-test run needs `Bash` for that command, an edit needs `Edit`/`Write`, a fetch needs
-`WebFetch`), reads `permissions.allow` and `permissions.deny` from `.claude/settings.json`
-and `.claude/settings.local.json` in that directory and from `~/.claude/settings.json`, and
-then does one of three things: confirms everything is allowed and schedules, proposes the
-exact `allow` entries and asks you to approve adding them, or refuses the background
-schedule and names the tool that would be denied — offering an interactive schedule, which
-can ask you at run time, instead. For the same reason it writes background prompts that
-never ask a question and end with a one-line verdict.
+Before it schedules a background run, the command checks whether the run is allowed to do its work. A background run reads the same permission settings as any Claude Code run in its directory, so the command first reads the effective `defaultMode` from `~/.claude/settings.json`, then `.claude/settings.json` and `.claude/settings.local.json` in that directory; the last one that sets it wins.
 
-Read the results with `codello schedule runs` (add `-n <name>` for one schedule) or on the
-**Background runs** page in the app, which keeps each run's full transcript. A failed run
-sends a push and rings the bell.
+- **`auto` or `bypassPermissions`:** no allow rules are needed. In `auto` mode the auto-mode classifier judges each tool call as it runs, and an action it blocks fails the run.
+- **Any other mode:** the command lists the tools your prompt needs (a test run needs `Bash` for that command, an edit needs `Edit` and `Write`, a fetch needs `WebFetch`) and compares them with `permissions.allow` and `permissions.deny` in the same files. It then confirms everything is allowed and schedules, proposes the exact `allow` entries and asks you to approve adding them, or refuses the background schedule, names the tool that would be denied, and offers an interactive schedule instead.
+
+A background prompt never asks a question and never relies on `codello done`, `codello session-status`, `codello decide`, or `codello emergency`, because a background run has no session. Its final message is its result, so the prompt puts the verdict in the first sentence.
+
+Read the results with `codello schedule runs` (add `-n <name>` for one schedule) or on the **Background runs** page in the app, which shows the first 200 characters of each run's final message and keeps its full transcript. A failed run sends a push and rings the bell; a run that finishes cleanly sends nothing.
 
 ## Quit when done
 
