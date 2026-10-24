@@ -1,0 +1,7 @@
+{
+  "name": "codello-bridge",
+  "version": "1.0.0",
+  "description": "Deliver Codello chat sends to Claude Code and report turn starts, turn ends, compactions, and usage windows to the Codello host, over a per-session Unix socket. Inert outside a Codello session.",
+  "author": { "name": "Mason Systems" },
+  "types": "./types/index.d.ts"
+}

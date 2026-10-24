@@ -24,7 +24,7 @@ Report your result to the agent that spawned you and let it decide what the sess
 Run it silently in the turn that leaves something only the user can do, before you write the final reply. Never mention the command or the status in the reply: "I've marked this session as waiting on your answer" tells the user nothing they need. Set it when:
 
 - A pull request is open and needs their review, approval, or merge.
-- You asked a question, or a decision is theirs to make.
+- You asked a question, or a decision is theirs to make. Post every decision in one `codello decide --file -` call first (the `decide` skill), with any text being approved in full in its `details`, so the user answers it on their phone, and keep the decisions out of your reply.
 - A permission you cannot grant yourself: a denied command, a credential, an interactive login, an MFA prompt.
 - A blocker only they can clear: an environment you cannot reach, an account you do not have, a change on a system outside your access.
 - You are handing back a **Blocker** or **Decision needed** item.
@@ -75,7 +75,7 @@ Nothing is armed until the `set` line prints. If the command prints anything els
 
 - `Not in a Codello session`: Codello did not spawn this PTY. Only a `codello claude` session, the web "new session" button, or a scheduled session can declare a status.
 - `Server not running`: the Codello server is down, so there is nothing to record the declaration.
-- `A cursor session cannot declare a status`: the declaration fires on a Stop hook, and Cursor has none. Claude Code and Codex sessions can declare; a Cursor session states the wait in its reply instead.
+- `A cursor session cannot declare a status`: the host predates Cursor support, which needs a Codello CLI restarted after [COD-1539](https://linear.app/masonsystems/issue/COD-1539/). State the wait in your reply instead. On a current host a Cursor session declares like Claude Code and Codex, and the declaration fires when an interactive turn completes. A `cursor-agent --print` run never fires it, so state the wait in your reply there too.
 
 ## Options
 
