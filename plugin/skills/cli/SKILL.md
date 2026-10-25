@@ -173,12 +173,15 @@ id**, and these commands target that session implicitly — no id argument:
 ```bash
 codello rename "Fix flaky auth test"    # retitle this session in the user's list
 codello snooze [until-wake|1h|4h|8h|clear]  # stop surfacing this session as waiting
+codello push-level only-when-waiting    # push only when this session needs the user (also: follow, muted)
 codello copy --md notes.md              # rich text → the clipboard of the device viewing this session
 codello copy --md notes.md --session <pty-id>   # ...or aim it at another session
 ```
 
 `snooze` is for when you've armed a wait Codello can't see — a cron, a CI run, a promised
 follow-up — so the session doesn't sit in the user's list looking like it needs them.
+
+When this session runs on timers or wake-ups and its routine turn end shouldn't push, run `codello push-level only-when-waiting`; permission prompts, questions, and declared waits still push. An older Codello host answers that it needs an update; carry on without it.
 
 The commands that report on the task itself also target this session implicitly, and each
 has its own skill with the rules for when to run it:
