@@ -44,7 +44,7 @@ You do not need to clear it when the user replies. Their message, typed in the t
 
 ## Never in the same turn as done
 
-`codello done` retires a declared wait before it records its own outcome, so `set waiting` followed by `done` in one turn leaves the session marked done with the wait gone. The two say opposite things: done means nothing is left for the user, waiting means something is. Pick one. The `done` skill's rule applies: an open PR, a question, a decision, or a follow-up means waiting, not done.
+`codello done` retires a declared wait before it records its own outcome, so `set waiting` followed by `done` in one turn leaves the session marked done with the wait gone. The two say opposite things: done means nothing is left for the user, waiting means something is. Pick one. The `done` skill's rule applies: an open PR, a question, a decision, or a follow-up means waiting, not done. After you post `codello decide` cards, set waiting: the host refuses `codello done` while any card or `codello ask` question is unanswered.
 
 ## Write the message for a lock screen
 

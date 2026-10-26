@@ -1,6 +1,6 @@
 ---
 name: done
-description: "Run `codello done`, or `codello done --failed`, at the end of a turn when the task is finished and nothing is left for the user: no PR to review, no question, no decision. Marks the session done (green check) or failed (red ✕). Also /codello:done."
+description: "Run `codello done`, or `codello done --failed`, only when all the work is finished and nothing is left for the user, so the session can be closed: no open question, no unanswered decision card, no PR to review, no follow-up. If anything is pending, set waiting instead. Marks the session done (green check) or failed (red ✕). Also /codello:done."
 ---
 
 # Report what this session ended as
@@ -25,17 +25,20 @@ Report your result to the agent that spawned you and let it decide what the sess
 
 ## Done means nothing is left for the user
 
-This is the whole rule, and it is stricter than "I finished my part."
+Run `codello done` only when all the work is finished and the user can close the session without reading further. This is stricter than "I finished my part."
 
 Do **not** run `codello done` when any of these is true:
 
+- A `codello decide` card or a `codello ask` question is still unanswered.
 - A pull request is open and waiting for the user to review, approve, or merge it.
 - There is a follow-up for them: a command to run, a credential to add, a setting to change, a deploy to approve.
 - You asked a question, or a decision is theirs to make.
 - You want them to check, confirm, or look at something.
 - Part of the work is unfinished, deferred, or blocked.
 
-In each of those cases, end the turn normally and say plainly what is pending. The ordinary "needs you" indicator is the right signal, and it is the one the user acts on. Marking such a session done is worse than saying nothing: it tells them there is nothing to come back for, and the session removes itself a day later.
+In each of those cases, run `codello session-status set waiting -m "<what you need>"` (the `waiting` skill) and end the turn, saying plainly what is pending. Marking such a session done is worse than saying nothing: it tells the user there is nothing to come back for, and the session removes itself a day later.
+
+The host enforces the first item. While any decision card or question is unanswered, `codello done` and `codello done --failed` are refused, and nothing is recorded. A card you post after running `codello done` in the same turn cancels that done.
 
 ## Failed means you could not do it
 
@@ -50,7 +53,7 @@ Do not use `--failed` for work you merely have not finished yet, or for a task t
 | `codello done` | Green check | None — the check is there when they next look | Closes itself after 24 hours, unless the user opens it or types in it |
 | `codello done --failed` | Red ✕ | `Failed · <session>`, with your summary as the body | Stays open |
 
-Either outcome clears the moment the user types in the session, like any other indicator. A session blocked on a permission prompt or a question still reads as blocked — that outranks both.
+Either outcome clears the moment the user types in the session, like any other indicator. A session blocked on a permission prompt, a question, or a decision card still reads as blocked; that outranks both.
 
 ## Running it
 
@@ -70,6 +73,7 @@ Nothing is armed until that line prints. If the command prints anything else, re
 
 - `Not in a Codello session`: Codello did not spawn this PTY. Only a `codello claude` session, the web "new session" button, or a scheduled session can report an outcome.
 - `Server not running`: the Codello server is down, so there is nothing to record the outcome.
+- `Not reported as done. 8 decision cards are still waiting on the user, ...`: the user has not answered every card or question yet. Run `codello session-status set waiting -m "<what you need>"` and end the turn. Run `codello done` after the answers arrive and nothing else is left.
 
 ## Write the summary for a lock screen
 
