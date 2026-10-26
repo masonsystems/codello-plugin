@@ -77,6 +77,8 @@ A lone decision can also go on the command line: `codello decide "<question>" --
 
 After the `codello decide` call, run `codello session-status set waiting -m "<n> decisions are waiting on you"` before your final reply (the `waiting` skill). The decisions are already on the user's phone. Never repeat or list them in your reply: the user would read each one twice and could answer the copy that never reaches you.
 
+Never run `codello done` in the same turn, even when a task brief says to finish with it. While any decision is unanswered the host refuses `codello done`. Run it after the answers arrive and nothing else is left for the user.
+
 ## Reading the result
 
 Run the command with `dangerouslyDisableSandbox: true`. The CLI talks to the local server, which a sandboxed command cannot reach.
