@@ -38,7 +38,7 @@ Do **not** run `codello done` when any of these is true:
 
 In each of those cases, run `codello session-status set waiting -m "<what you need>"` (the `waiting` skill) and end the turn, saying plainly what is pending. Marking such a session done is worse than saying nothing: it tells the user there is nothing to come back for, and the session removes itself a day later.
 
-The host enforces the first item. While any decision card or question is unanswered, `codello done` and `codello done --failed` are refused, and nothing is recorded. A card you post after running `codello done` in the same turn cancels that done.
+The host enforces the first item. While any decision card or question is unanswered, or the user's answers have not reached you yet, `codello done` and `codello done --failed` are refused, and nothing is recorded. A card or question you post after running `codello done` in the same turn drops that done when the turn ends, and nothing tells you so at that point. Set waiting instead, and run `codello done` again once the answers arrive and nothing is left for the user.
 
 ## Failed means you could not do it
 
@@ -62,18 +62,19 @@ Run the command with `dangerouslyDisableSandbox: true`. The CLI talks to the loc
 Expect one of:
 
 ```
-Task reported as done. When this turn ends the session is marked done; it closes itself in 24 hours.
+Task reported as done. When this turn ends the session is marked done; it closes itself in 24 hours. If you post a decision card or a question before this turn ends, the done is dropped: set waiting instead, and run `codello done` again once the answers arrive and nothing is left for the user.
 ```
 
 ```
-Task reported as failed. When this turn ends the session is marked failed and you are notified.
+Task reported as failed. When this turn ends the session is marked failed and you are notified. If you post a decision card or a question before this turn ends, the failure is dropped: set waiting instead, and run `codello done` again once the answers arrive and nothing is left for the user.
 ```
 
-Nothing is armed until that line prints. If the command prints anything else, report exactly what it said and end the turn normally:
+An older CLI prints only the first two sentences. Nothing is armed until that line prints. If the command prints anything else, report exactly what it said and end the turn normally:
 
 - `Not in a Codello session`: Codello did not spawn this PTY. Only a `codello claude` session, the web "new session" button, or a scheduled session can report an outcome.
 - `Server not running`: the Codello server is down, so there is nothing to record the outcome.
 - `Not reported as done. 8 decision cards are still waiting on the user, ...`: the user has not answered every card or question yet. Run `codello session-status set waiting -m "<what you need>"` and end the turn. Run `codello done` after the answers arrive and nothing else is left.
+- `Not reported as done. The user answered your decision cards, and 2 answers are on the way to you ...`: the answers reach you as your next prompt. End the turn without `codello done`, act on them when they arrive, and run `codello done` then if nothing is left.
 
 ## Write the summary for a lock screen
 
