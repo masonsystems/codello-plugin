@@ -73,6 +73,27 @@ JSON
 
 A lone decision can also go on the command line: `codello decide "<question>" --options "A|B" --details "<markdown>"`. Write `\n` line breaks in the JSON string; on the command line, use real line breaks inside the quotes.
 
+## Keep the ids, and change a decision in place
+
+`codello decide` prints one decision id per line. Keep them: you need an id to change a decision you already posted. If you lost them, `codello decide list` prints each decision of this session that has not reached you yet, one per line with its id, status, and question; `--json` prints the same as JSON.
+
+When you learn something that changes a decision you already posted, change that decision. Never post a new decision that says it replaces, supersedes, or corrects an earlier card: the user would see both cards and could answer the stale one.
+
+- **To correct or replace a decision**, run `codello decide revise <id>` with the new decision, either as a paragraph with `--options` and `--details`, or with `--file` holding one entry in the same JSON shape. The card keeps its place and shows a Revised mark. If the user already answered it, the answer is cleared and the decision is open again.
+- **To drop a decision** that no longer matters, run `codello decide withdraw <id>`, with several ids at once if you need. The card disappears.
+
+```bash
+codello decide revise 0adade9b-0eb3-477e-bd9d-f41c218db451 --file - <<'JSON'
+{
+  "question": "Switch the integration tests to MySQL?\n\n- **Why:** CI already runs MySQL, so the tests would match it.\n\nRecommended: Switch to MySQL.",
+  "options": ["Switch to MySQL: tests match CI", "Keep SQLite: fast runs"]
+}
+JSON
+codello decide withdraw 162d5b7d-754b-4d25-b885-d66f1b12715e
+```
+
+Both exit 0 when the change is made. Exit 1 changes nothing, and stderr names each id it refused and why: an id that is not one of this session's open or answered decisions (it may already have reached you; its answer is in the prompt you got or will get), answers that are already on their way to you, a revise that would reopen an answered decision past the per-session limit on open decisions, or a Codello server too old for these commands, which says to run `codello restart`. When an answer already reached you, act on it or post a new decision about what changed; when answers are on their way, wait for them.
+
 ## Then declare the wait, and keep the decisions out of your reply
 
 After the `codello decide` call, run `codello session-status set waiting -m "<n> decisions are waiting on you"` before your final reply (the `waiting` skill). The decisions are already on the user's phone. Never repeat or list them in your reply: the user would read each one twice and could answer the copy that never reaches you.
@@ -93,6 +114,10 @@ Run the command with `dangerouslyDisableSandbox: true`. The CLI talks to the loc
 | `codello decide "<question>"` | Post one decision the user answers in their own words |
 | `codello decide "<question>" --options "A\|B\|C"` | Offer up to 3 options; the first is your recommendation |
 | `codello decide "<question>" --details "<markdown>"` | Show the text being approved behind a Details toggle |
+| `codello decide revise <id> "<question>" --options "A\|B"` | Replace a decision you posted, keeping its id and place |
+| `codello decide revise <id> --file -` | The same, with one JSON entry read from stdin |
+| `codello decide withdraw <id>...` | Remove decisions you posted; all or none |
+| `codello decide list [--json]` | List this session's decisions that have not reached you, with their ids |
 
 ## Related
 
