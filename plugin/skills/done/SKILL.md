@@ -29,7 +29,7 @@ This is the whole rule, and it is stricter than "I finished my part."
 
 Do **not** run `codello done` when any of these is true:
 
-- A pull request is open and waiting for the user to review, approve, or merge it.
+- A pull request is open and waiting for the user to review, approve, or merge it. A pull request the user has already approved, where the merge is left to a process they run later (such as a merge queue), no longer waits on them; once you have recorded the approval the project asks for, run `codello done`.
 - There is a follow-up for them: a command to run, a credential to add, a setting to change, a deploy to approve.
 - You asked a question, or a decision is theirs to make.
 - You want them to check, confirm, or look at something.
