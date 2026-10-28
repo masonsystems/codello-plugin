@@ -29,6 +29,8 @@ Run it silently in the turn that leaves something only the user can do, before y
 - A blocker only they can clear: an environment you cannot reach, an account you do not have, a change on a system outside your access.
 - You are handing back a **Blocker** or **Decision needed** item.
 
+Do not set it, and do not mention it, for a `codello message` waiting for the user to send or discard it. The user already sees that card inline, in the Codello conversation where they talk to you, and Codello types a line into this session when they act on it. It is not a blocker; keep working.
+
 One declaration per wait. A second `set` replaces the line on the row and sends another push, so declare once and declare again only when what the user has to do has changed, or when a declaration was dropped.
 
 The declaration fires at the end of the turn. If the user types before the turn ends, the armed declaration is dropped: no dot, no push, because their message may already be the answer. If that message did not answer you, declare again in the next turn.

@@ -202,7 +202,15 @@ codello permit <id> allow                                # as a watcher, allow o
 codello secret list                                      # names of the credentials this session holds (skill: secrets)
 codello secret request GITHUB_TOKEN --reason "Deploy"    # ask for a credential without it entering the chat (skill: secrets)
 TOKEN="$(codello secret get GITHUB_TOKEN)"               # use a held credential; only ever inside $(…) (skill: secrets)
+codello message <session> "<text>"                       # type a message into another session, after the user sends it
 ```
+
+**A `codello message` waiting for the user to send it is not a blocker.** The user sees
+the message card inline, in the Codello conversation where they already talk to you, so
+do not mention it in your reply, do not ask them to approve it, and do not set a waiting
+status for it. Keep working. When the user sends or discards it, Codello types one line
+into this session ("Codello: your message <id> to ... was delivered." or "... discarded
+your message ..."), so you do not need to poll `codello message status`.
 
 `session-status set waiting` exists because a session with a `Monitor`, a background
 `Bash`, or a dev server still running reads as `working` to every inference above, so a
