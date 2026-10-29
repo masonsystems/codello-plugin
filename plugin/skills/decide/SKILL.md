@@ -47,13 +47,36 @@ Write each option as `Label: one-line description`, so a tap on it makes sense w
 - The description says what that choice does or costs, in one line. Keep the whole option under 120 characters, which every Codello version shows in full.
 - Never write `(recommended)` in an option. The card already marks the first option Recommended, and the words would show twice.
 
+## Use checkboxes for independent items
+
+When the user picks any number of items that don't exclude each other, such as which checks to add, which files to delete, or which of several fixes to ship, post one multi-select decision instead of one yes/no decision per item. Set `"multiSelect": true` and list the items in `options`, up to 8. Name the items you recommend in `"recommended"`; they start checked and carry the Recommended mark. Every name in `recommended` must match an option exactly. Leave `recommended` out when you recommend none.
+
+Keep each option a short label, because the answer joins every checked one on one line. When the choices exclude each other (Postgres or SQLite, send or hold), keep a single-choice decision with your recommendation first.
+
+```json
+{
+  "question": "Which checks run before each push?\n\n- **Why:** pushes that break the build reach CI and block everyone.\n- **Cost:** each check adds time to every push.\n\nRecommended: Lint and Unit tests.",
+  "options": ["Lint", "Unit tests", "Build"],
+  "multiSelect": true,
+  "recommended": ["Lint", "Unit tests"]
+}
+```
+
+The user checks any boxes, can add their own words, and taps Done. The answer lists every checked option, `(none selected)` when they checked none, and their words after `Note:`:
+
+```
+1. Which checks run before each push? → Lint; Build; Note: only on main
+```
+
+On the command line, use `--multi` with `--recommended "A|B"`: `codello decide "<question>" --multi --options "Lint|Unit tests|Build" --recommended "Lint|Unit tests"`. If the CLI or the Codello server is too old for multi-select, the call exits 1, posts nothing, and says so; post one yes/no decision per item instead.
+
 ## Put the text being approved, and anything longer, in `details`
 
 When a decision rests on a multi-step plan or other material longer than the bullets, put it in `details`. When a decision approves text (an email, a ticket comment, a PR description, a message), put that text in full in the decision's `details`, as Markdown: recipients, subject, and body. The card shows it behind a Details toggle under the question. Never write "see the reply", "the draft above", or "the note I drafted earlier": the user answers from the card, and your reply may be hours of scrolling away. `details` holds up to 16 KB.
 
 ## Post every decision in one call
 
-Post all of a turn's decisions in one call, with a JSON list on stdin. Each entry has a `question`, and optionally `options` (a list of 1 to 3 strings) and `details`. The CLI checks every entry before it posts anything, so one bad entry posts none of them; fix it and run the call again. A quoted heredoc keeps the shell from touching the text:
+Post all of a turn's decisions in one call, with a JSON list on stdin. Each entry has a `question`, and optionally `options` (a list of 1 to 3 strings, or up to 8 with `multiSelect`), `details`, `multiSelect`, and `recommended`. The CLI checks every entry before it posts anything, so one bad entry posts none of them; fix it and run the call again. A quoted heredoc keeps the shell from touching the text:
 
 ```bash
 codello decide --file - <<'JSON'
@@ -114,6 +137,7 @@ Run the command with `dangerouslyDisableSandbox: true`. The CLI talks to the loc
 | `codello decide "<question>"` | Post one decision the user answers in their own words |
 | `codello decide "<question>" --options "A\|B\|C"` | Offer up to 3 options; the first is your recommendation |
 | `codello decide "<question>" --details "<markdown>"` | Show the text being approved behind a Details toggle |
+| `codello decide "<question>" --multi --options "A\|B\|C" --recommended "A\|B"` | Offer up to 8 checkboxes; the recommended ones start checked |
 | `codello decide revise <id> "<question>" --options "A\|B"` | Replace a decision you posted, keeping its id and place |
 | `codello decide revise <id> --file -` | The same, with one JSON entry read from stdin |
 | `codello decide withdraw <id>...` | Remove decisions you posted; all or none |
