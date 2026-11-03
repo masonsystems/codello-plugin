@@ -39,7 +39,7 @@ export type BridgeTurn = {
 
 declare module 'claude-code' {
   interface PluginState {
-    'codello-bridge': {
+    codello: {
       link: BridgeLink | null
       turn: BridgeTurn
     }

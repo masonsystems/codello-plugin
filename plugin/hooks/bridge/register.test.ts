@@ -1,7 +1,7 @@
 import { expect, mock, test } from 'claude-code/testing'
 import type { HttpInit, On } from 'claude-code'
 
-import type { BridgeTurn } from '../types'
+import type { BridgeTurn } from '../../types'
 
 // `session.append` is not exercised here: on 2.1.287 the kit cannot stand in
 // for the row store (a test hook that answers without `next` is skipped, and

@@ -1,6 +1,6 @@
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { BridgeLink, BridgeSend, BridgeSendStage, BridgeTurn } from '../types'
+import type { BridgeLink, BridgeSend, BridgeSendStage, BridgeTurn } from '../../types'
 import { EventQueue } from './event-queue'
 import {
   BRIDGE_ORIGIN,
@@ -22,8 +22,8 @@ import {
 // transport error is swallowed. Outside a Codello session the host's
 // variables are absent, `link` is null, and the mod makes no calls at all.
 
-const LINK = { plugin: 'codello-bridge', key: 'link' } as const
-const TURN = { plugin: 'codello-bridge', key: 'turn' } as const
+const LINK = { plugin: 'codello', key: 'link' } as const
+const TURN = { plugin: 'codello', key: 'turn' } as const
 const IDLE: BridgeTurn = { isRunning: false, held: [] }
 
 // Bounds what a host that is down can cost: older events fall off the front.
