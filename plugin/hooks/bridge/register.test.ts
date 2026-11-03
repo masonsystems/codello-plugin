@@ -598,7 +598,8 @@ test('/clear lets a discovered link go, and the next turn start says hello for t
       return { status: 200, text: JSON.stringify({ socketPath: asked === 1 ? OWN_SOCKET : NEXT_SOCKET, token: OWN_TOKEN }) }
     }
     if (!call.url.includes('/v1/inbound')) return { status: 200, text: '{}' }
-    return { status: 409, text: '' }
+    // The first socket dies with the old conversation; the new one's poll ends.
+    return call.init?.socketPath === OWN_SOCKET ? { status: 500, text: '' } : { status: 409, text: '' }
   })
 
   on('session.end', () => ({ sessionId: SESSION_ID }))
@@ -615,6 +616,13 @@ test('/clear lets a discovered link go, and the next turn start says hello for t
   expect(onNext.length > 0).toBe(true)
   expect(posted(onNext)).toContain('"kind":"session-start"')
   expect(posted(onNext)).toContain('"kind":"turn-start"')
+
+  // The old link's poll loop stops with the link: past the whole backoff
+  // ladder, it neither polls the dead socket again nor says hello a third time.
+  const polledOldBefore = calls.filter(call => call.url.includes('/v1/inbound') && call.init?.socketPath === OWN_SOCKET).length
+  await clock.advance(30_000)
+  expect(asked).toBe(2)
+  expect(calls.filter(call => call.url.includes('/v1/inbound') && call.init?.socketPath === OWN_SOCKET).length).toBe(polledOldBefore)
 })
 
 test('a reload that takes up a discovered link can still ask again when that link dies', async ($, on) => {
