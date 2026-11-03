@@ -13,5 +13,8 @@
         ]
       }
     ]
-  }
+  },
+  "modules": [
+    "./bridge/register.ts"
+  ]
 }
