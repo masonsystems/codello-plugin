@@ -72,7 +72,7 @@ Each answer line says `(draft edited)` or `(draft unchanged)`, and the edited te
 Hi Dana,
 
 The export fix ships Friday.
----end draft---
+---end draft 1---
 ```
 
 On the command line, use `--draft "<text>"`. `codello decide revise <id> --draft "<text>"` replaces the draft and drops the user's edits. If the CLI or the Codello server is too old for drafts, the call exits 1, posts nothing, and says so; put the text in `details` instead.
