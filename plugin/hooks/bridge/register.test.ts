@@ -556,3 +556,89 @@ test('a discovered link that goes dead is discovered again once the backoff tops
   expect(asked).toBe(2)
   expect(calls.some(call => call.url.includes('/v1/inbound') && call.init?.socketPath === NEXT_SOCKET)).toBe(true)
 })
+
+test('a hello the host never answers gives up after its timeout, so session start is not held', async ($, on) => {
+  mock.env(on, { HOME })
+  const clock = mock.clock(on)
+  let asked = 0
+  const calls: Fetched[] = []
+  on('session.start', ($, e) => ({ cwd: e.cwd }))
+  on('env.set', () => ({ value: undefined }))
+  on('turn.start', ($, e) => ({ turnId: e.turnId }))
+  on('session.id', () => ({ value: SESSION_ID }))
+  on('session.cwd', () => ({ value: START.cwd }))
+  // The listening socket accepts, and a wedged host never answers.
+  on('http.fetch', async ($, e) => {
+    calls.push({ url: e.url, init: e.init })
+    asked += 1
+    await clock.sleep(60_000)
+    return { value: { status: 200, ok: true, headers: {}, text: '{}' } }
+  })
+
+  let isStarted = false
+  const started = $.session.start(START).then(() => {
+    isStarted = true
+  })
+  await clock.advance(1_400)
+  expect(isStarted).toBe(false)
+  await clock.advance(200)
+  await started
+  expect(isStarted).toBe(true)
+  expect(asked).toBe(1)
+  expect(events(calls).length).toBe(0)
+})
+
+test('/clear lets a discovered link go, and the next turn start says hello for the new conversation', async ($, on) => {
+  mock.env(on, { HOME })
+  const clock = mock.clock(on)
+  let asked = 0
+  const { calls } = host(on, call => {
+    if (call.url.endsWith(HELLO)) {
+      asked += 1
+      return { status: 200, text: JSON.stringify({ socketPath: asked === 1 ? OWN_SOCKET : NEXT_SOCKET, token: OWN_TOKEN }) }
+    }
+    if (!call.url.includes('/v1/inbound')) return { status: 200, text: '{}' }
+    return { status: 409, text: '' }
+  })
+
+  on('session.end', () => ({ sessionId: SESSION_ID }))
+
+  await $.session.start(START)
+  await clock.advance(10)
+  expect(asked).toBe(1)
+  await $.session.end({ reason: 'clear' })
+  await $.turn.start({ text: 'fresh', turnId: 't1' })
+  await clock.advance(10)
+
+  expect(asked).toBe(2)
+  const onNext = events(calls).filter(call => call.init?.socketPath === NEXT_SOCKET)
+  expect(onNext.length > 0).toBe(true)
+  expect(posted(onNext)).toContain('"kind":"session-start"')
+  expect(posted(onNext)).toContain('"kind":"turn-start"')
+})
+
+test('a reload that takes up a discovered link can still ask again when that link dies', async ($, on) => {
+  mock.env(on, { HOME })
+  const clock = mock.clock(on)
+  on('state.get', ($, e) =>
+    e.key === 'link'
+      ? { value: { value: { socketPath: OWN_SOCKET, token: OWN_TOKEN, isAmbient: true }, version: 1 } }
+      : { value: { value: { isRunning: false, held: [] }, version: 1 } },
+  )
+  let asked = 0
+  const { calls } = host(on, call => {
+    if (call.url.endsWith(HELLO)) {
+      asked += 1
+      return { status: 200, text: JSON.stringify({ socketPath: NEXT_SOCKET, token: OWN_TOKEN }) }
+    }
+    if (!call.url.includes('/v1/inbound')) return { status: 200, text: '{}' }
+    return call.init?.socketPath === OWN_SOCKET ? { status: 500, text: '' } : { status: 409, text: '' }
+  })
+
+  await $.session.start(START)
+  await clock.advance(30_000)
+
+  expect(hellos(calls).map(call => call.init?.socketPath)).toEqual([DISCOVERY_SOCKET])
+  expect(asked).toBe(1)
+  expect(calls.some(call => call.url.includes('/v1/inbound') && call.init?.socketPath === NEXT_SOCKET)).toBe(true)
+})

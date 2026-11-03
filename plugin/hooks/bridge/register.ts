@@ -41,6 +41,12 @@ const IDLE: BridgeTurn = { isRunning: false, held: [] }
 const MAX_QUEUE = 2_000
 const MAX_BATCH = 200
 const MAX_BACKOFF_MS = 5_000
+// A hello runs inside session.start and turn.start, which the user's turn
+// waits on. The socket is local, so a host that is up answers in
+// milliseconds; one whose event loop is wedged accepts the connection and
+// never answers, and a hook's clock stops while a `$` call is in flight, so
+// nothing else bounds the wait.
+const HELLO_TIMEOUT_MS = 1_500
 
 // `undefined` until this load's session.start has looked; `null` when no host
 // was configured, which turns every emit into nothing.
@@ -275,6 +281,10 @@ async function pollLoop($: EngineInterface, initial: BridgeLink): Promise<void> 
   let target = initial
   let backoffMs = 250
   for (;;) {
+    // The link moved on without this loop (a `/clear` let it go and the next
+    // turn start found a new one): that connect started its own loop, and
+    // two loops asking the discovery socket would mint two links.
+    if (link !== target) return
     try {
       const res = await $.http.fetch(`${BRIDGE_ORIGIN}${INBOUND_PATH}?loadId=${loadId}&waitMs=${POLL_WAIT_MS}`, {
         socketPath: target.socketPath,
@@ -340,12 +350,18 @@ async function hello($: EngineInterface): Promise<BridgeLink | null> {
       isInteractive: startIsInteractive,
       loadId,
     }
-    const res = await $.http.fetch(BRIDGE_ORIGIN + HELLO_PATH, {
-      method: 'POST',
-      socketPath: discoverySocket,
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    })
+    const res = await Promise.race([
+      $.http.fetch(BRIDGE_ORIGIN + HELLO_PATH, {
+        method: 'POST',
+        socketPath: discoverySocket,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }),
+      // A host that does not answer in time is treated as not there; the
+      // next turn start asks again. The fetch itself is left to finish.
+      wait($, HELLO_TIMEOUT_MS).then(() => null),
+    ])
+    if (res === null) return null
     if (res.status === 403) {
       isDiscoveryRefused = true
       return null
@@ -401,16 +417,16 @@ export const register: Register = on => {
       link = await resolveLink($)
       // A hot reload takes up the turn the last load left, held sends included.
       kept = (await $.state.get(TURN)).value ?? IDLE
-      if (link === null) {
-        // A session Codello spawned takes its link from the environment or
-        // not at all: it is one the host already owns, and the variables are
-        // gone only because the first load unset them, which a hot reload
-        // covers through the link in session state.
-        const isSpawned = Boolean((await $.env.get('CODELLO_SESSION')) || (await $.env.get('CODETOGO_SESSION')))
-        const configDir = isSpawned ? undefined : await configDirOf($)
-        discoverySocket = configDir === undefined ? null : `${configDir}/${AMBIENT_SOCKET_RELATIVE}`
-        link = await hello($)
-      }
+      // A session Codello spawned takes its link from the environment or not
+      // at all: it is one the host already owns, and the variables are gone
+      // only because the first load unset them, which a hot reload covers
+      // through the link in session state. Where to look is settled on every
+      // load, link in hand or not, so a reload that takes up a discovered
+      // link can still ask again when that link dies.
+      const isSpawned = Boolean((await $.env.get('CODELLO_SESSION')) || (await $.env.get('CODETOGO_SESSION')))
+      const configDir = isSpawned ? undefined : await configDirOf($)
+      discoverySocket = configDir === undefined ? null : `${configDir}/${AMBIENT_SOCKET_RELATIVE}`
+      if (link === null) link = await hello($)
     } catch {
       link = null
     }
@@ -421,6 +437,15 @@ export const register: Register = on => {
 
   on('session.end', async ($, e, next) => {
     emit($, 'session-end', { reason: e.reason })
+    // `/clear` ends the conversation but keeps the process, under a new
+    // session id, and raises no session.start. The host drops the row for the
+    // old id on this event, so a discovered link is dead from here: let it
+    // go, and the next turn start says hello for the new id. A spawned
+    // session keeps its link, which names its PTY rather than a conversation.
+    if (e.reason === 'clear' && link?.isAmbient === true) {
+      link = null
+      await $.state.set(LINK, null).catch(() => undefined)
+    }
     return next(e)
   })
 
