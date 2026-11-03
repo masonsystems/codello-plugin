@@ -12,7 +12,20 @@ import type { BridgeTurn } from '../../types'
 const SOCKET = '/tmp/codello-bridge-test/bridge.sock'
 const TOKEN = 'test-token'
 const START = { cwd: '/w', surface: 'terminal', isInteractive: true } as const
-const COMPLETE = { answer: 'done', durationMs: 5, isAborted: false, turnId: 't1', reason: 'answer' } as const
+const SESSION_ID = 'c0de110a-0000-4000-8000-000000000001'
+
+// A session Codello did not start: it has a home directory and none of the
+// bridge variables, so it looks for a host at the discovery socket.
+const HOME = '/home/e'
+const HELLO = '/v1/hello'
+const DISCOVERY_SOCKET = `${HOME}/.codetogo/bridge/ambient.sock`
+// What a host hands such a session back: a socket of its own, and the token
+// that socket accepts. A restarted host hands back a different one.
+const OWN_SOCKET = '/tmp/codello-bridge-test/own.sock'
+const OWN_TOKEN = 'own-token'
+const NEXT_SOCKET = '/tmp/codello-bridge-test/next.sock'
+
+const COMPLETE ={ answer: 'done', durationMs: 5, isAborted: false, turnId: 't1', reason: 'answer' } as const
 
 interface Fetched {
   url: string
@@ -34,6 +47,9 @@ function host(on: On, respond: Respond, slowPoll?: number, clock?: { sleep: (ms:
   })
   on('turn.start', ($, e) => ({ turnId: e.turnId }))
   on('turn.complete', () => ({ text: '' }))
+  // What the mod tells a host about a session the host did not start.
+  on('session.id', () => ({ value: SESSION_ID }))
+  on('session.cwd', () => ({ value: START.cwd }))
   let polls = 0
   on('http.fetch', async ($, e) => {
     calls.push({ url: e.url, init: e.init })
@@ -398,4 +414,145 @@ test('a send that arrives while an ended turn’s sends are still going out wait
   await clock.advance(100)
 
   expect(submitted).toEqual(['one', 'two'])
+})
+
+// Answers a hello with a link of this session's own, and answers the polls on
+// that link the way `pollEnds` does, so the loop ends after one round.
+function discovers(socketPath = OWN_SOCKET, token = OWN_TOKEN): Respond {
+  const ends = sendsOnce([])
+  return call => (call.url.endsWith(HELLO) ? { status: 200, text: JSON.stringify({ socketPath, token }) } : ends(call))
+}
+
+function hellos(calls: Fetched[]): Fetched[] {
+  return calls.filter(call => call.url.endsWith(HELLO))
+}
+
+function events(calls: Fetched[]): Fetched[] {
+  return calls.filter(call => call.url.endsWith('/v1/events'))
+}
+
+test('a session Codello did not start finds the host at its discovery socket, then uses the link it is given', async ($, on) => {
+  mock.env(on, { HOME })
+  const clock = mock.clock(on)
+  const { calls } = host(on, discovers())
+
+  await $.session.start(START)
+  await clock.advance(10)
+
+  const asked = hellos(calls)
+  expect(asked.length).toBe(1)
+  expect(asked[0].init?.socketPath).toBe(DISCOVERY_SOCKET)
+  expect(asked[0].init?.method).toBe('POST')
+  // The discovery socket takes no token; the one it answers with does.
+  expect(asked[0].init?.headers?.authorization).toBe(undefined)
+  expect(asked[0].init?.headers?.['content-type']).toBe('application/json')
+  const body = JSON.parse(String(asked[0].init?.body))
+  expect(body.sessionId).toBe(SESSION_ID)
+  expect(body.cwd).toBe('/w')
+  expect(body.isInteractive).toBe(true)
+  expect(typeof body.loadId).toBe('string')
+
+  const posts = events(calls)
+  expect(posts.length > 0).toBe(true)
+  expect(posts.every(call => call.init?.socketPath === OWN_SOCKET)).toBe(true)
+  expect(posts.every(call => call.init?.headers?.authorization === `Bearer ${OWN_TOKEN}`)).toBe(true)
+  expect(posted(calls)).toContain('"kind":"session-start"')
+  expect(calls.some(call => call.url.includes('/v1/inbound') && call.init?.socketPath === OWN_SOCKET)).toBe(true)
+})
+
+test('the configured config directory decides where the discovery socket is, not the home directory', async ($, on) => {
+  mock.env(on, { HOME, CODELLO_CONFIG_DIR: '/var/codello' })
+  const clock = mock.clock(on)
+  const { calls } = host(on, discovers())
+
+  await $.session.start(START)
+  await clock.advance(10)
+
+  expect(hellos(calls).map(call => call.init?.socketPath)).toEqual(['/var/codello/bridge/ambient.sock'])
+})
+
+test('a session Codello started never looks for a host: its link comes from the environment or not at all', async ($, on) => {
+  mock.env(on, { HOME, CODELLO_SESSION: 'sess-1' })
+  const clock = mock.clock(on)
+  const { calls } = host(on, discovers())
+
+  await $.session.start(START)
+  await clock.advance(10)
+  await $.turn.start({ text: 'hi', turnId: 't1' })
+  await clock.advance(10)
+
+  expect(calls.length).toBe(0)
+})
+
+test('with no host running, the hello is tried again at the next turn start, and that turn start reaches the host', async ($, on) => {
+  mock.env(on, { HOME })
+  const clock = mock.clock(on)
+  let asked = 0
+  const ends = sendsOnce([])
+  const { calls } = host(on, call => {
+    if (!call.url.endsWith(HELLO)) return ends(call)
+    asked += 1
+    // No host at session.start: the socket file does not exist.
+    if (asked === 1) throw new Error('connect ENOENT')
+    return { status: 200, text: JSON.stringify({ socketPath: OWN_SOCKET, token: OWN_TOKEN }) }
+  })
+
+  await $.session.start(START)
+  await clock.advance(10)
+  expect(asked).toBe(1)
+  expect(events(calls).length).toBe(0)
+
+  const started = await $.turn.start({ text: 'hi', turnId: 't1' })
+  await clock.advance(10)
+
+  expect(started.turnId).toBe('t1')
+  expect(asked).toBe(2)
+  const body = posted(calls)
+  expect(body.indexOf('"kind":"session-start"') < body.indexOf('"kind":"turn-start"')).toBe(true)
+  expect(body).toContain('"kind":"turn-start"')
+})
+
+test('a host that refuses the session is never asked again', async ($, on) => {
+  mock.env(on, { HOME })
+  const clock = mock.clock(on)
+  let asked = 0
+  const ends = sendsOnce([])
+  const { calls } = host(on, call => {
+    if (!call.url.endsWith(HELLO)) return ends(call)
+    asked += 1
+    return { status: 403, text: 'this session is already mine' }
+  })
+
+  await $.session.start(START)
+  await clock.advance(10)
+  await $.turn.start({ text: 'hi', turnId: 't1' })
+  await $.turn.complete(COMPLETE)
+  await clock.advance(10)
+  await $.turn.start({ text: 'again', turnId: 't2' })
+  await clock.advance(10)
+
+  expect(asked).toBe(1)
+  expect(events(calls).length).toBe(0)
+})
+
+test('a discovered link that goes dead is discovered again once the backoff tops out', async ($, on) => {
+  mock.env(on, { HOME })
+  const clock = mock.clock(on)
+  let asked = 0
+  const { calls } = host(on, call => {
+    if (call.url.endsWith(HELLO)) {
+      asked += 1
+      return { status: 200, text: JSON.stringify({ socketPath: asked === 1 ? OWN_SOCKET : NEXT_SOCKET, token: OWN_TOKEN }) }
+    }
+    if (!call.url.includes('/v1/inbound')) return { status: 200, text: '{}' }
+    // The first host stops answering; the one found after it supersedes the poll.
+    return call.init?.socketPath === OWN_SOCKET ? { status: 500, text: '' } : { status: 409, text: '' }
+  })
+
+  await $.session.start(START)
+  // Past the whole backoff ladder, 250 ms doubling to 5 s, and one more wait.
+  await clock.advance(30_000)
+
+  expect(asked).toBe(2)
+  expect(calls.some(call => call.url.includes('/v1/inbound') && call.init?.socketPath === NEXT_SOCKET)).toBe(true)
 })

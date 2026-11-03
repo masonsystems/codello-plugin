@@ -5,7 +5,12 @@
 // read this value, and any plugin's `http.fetch` hook sees the token in every
 // request this mod makes, so keeping it out of state would hide it from none
 // of them (docs/claude-code-io-surfaces.md in the Codello repo).
-export type BridgeLink = { socketPath: string; token: string }
+//
+// A session the host did not start carries no such variables and asks the
+// host's discovery socket for a link instead; `isAmbient` marks that link.
+// It dies when the host restarts, and no variable brings a new one, so the
+// poll loop asks the discovery socket again; see register.ts.
+export type BridgeLink = { socketPath: string; token: string; isAmbient?: boolean }
 
 // A chat send the host handed over and the mod has not finished delivering.
 //

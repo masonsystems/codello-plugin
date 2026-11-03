@@ -5,6 +5,12 @@
 
 export const EVENTS_PATH = '/v1/events'
 export const INBOUND_PATH = '/v1/inbound'
+export const HELLO_PATH = '/v1/hello'
+
+// The host's discovery socket, relative to the Codello config directory. A
+// session the host did not start has no per-session address to use, so the
+// host listens here for all of them and hands each one its own link.
+export const AMBIENT_SOCKET_RELATIVE = 'bridge/ambient.sock'
 
 // The URL host is ignored on a Unix socket; it only fills the Host header.
 export const BRIDGE_ORIGIN = 'http://codello-bridge'
@@ -43,6 +49,22 @@ export interface InboundSend {
   text: string
 }
 
+// What the mod sends the host's discovery socket, so the host can tell which
+// Claude Code session is asking and show it where it runs.
+export interface Hello {
+  sessionId: string
+  cwd: string
+  isInteractive: boolean
+  loadId: string
+}
+
+// The link the host hands back: the per-session socket to use from now on,
+// and the token that socket accepts.
+export interface HelloAnswer {
+  socketPath: string
+  token: string
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
@@ -61,4 +83,19 @@ export function parseInbound(body: string): InboundSend[] {
   }
   if (!isRecord(parsed) || !Array.isArray(parsed.sends)) return []
   return parsed.sends.filter(isInboundSend)
+}
+
+/** Reads the host's hello answer, `{ socketPath, token }`; anything else is no link. */
+export function parseHello(body: string): HelloAnswer | null {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(body)
+  } catch {
+    return null
+  }
+  if (!isRecord(parsed)) return null
+  const { socketPath, token } = parsed
+  if (typeof socketPath !== 'string' || socketPath === '') return null
+  if (typeof token !== 'string' || token === '') return null
+  return { socketPath, token }
 }

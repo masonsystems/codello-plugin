@@ -3,13 +3,17 @@ import type { EngineInterface, Register } from 'claude-code'
 import type { BridgeLink, BridgeSend, BridgeSendStage, BridgeTurn } from '../../types'
 import { EventQueue } from './event-queue'
 import {
+  AMBIENT_SOCKET_RELATIVE,
   BRIDGE_ORIGIN,
   EVENTS_PATH,
+  HELLO_PATH,
   INBOUND_PATH,
   POLL_WAIT_MS,
+  parseHello,
   parseInbound,
   type DeliveryRoute,
   type DeliveryCause,
+  type Hello,
   type InboundSend,
 } from './wire'
 
@@ -19,8 +23,15 @@ import {
 // The transcript stays chat's source of truth; this mod forwards no rows.
 //
 // It must never block or fail a turn: every hook calls `next(e)`, and every
-// transport error is swallowed. Outside a Codello session the host's
-// variables are absent, `link` is null, and the mod makes no calls at all.
+// transport error is swallowed.
+//
+// A session Codello started reads the host's address from the environment. A
+// session it did not start (the Claude Desktop app, a `claude` in a terminal,
+// the editor extension) carries no such variables, so the mod looks for a
+// running host on the machine instead, at the discovery socket under the
+// Codello config directory (COD-2362). With no host there the mod makes no
+// calls at all beyond that one, which fails at once because the socket file
+// does not exist.
 
 const LINK = { plugin: 'codello', key: 'link' } as const
 const TURN = { plugin: 'codello', key: 'turn' } as const
@@ -48,6 +59,17 @@ let turn: BridgeTurn = IDLE
 let written: Promise<void> = Promise.resolve()
 // The one loop that delivers sends whose turn has ended.
 let isDeliveringDue = false
+// Where to look for a running host, or `null` when this session never looks:
+// Codello started it, or no config directory could be determined.
+let discoverySocket: string | null = null
+// Set by a 403: this host will not take this session, now or later.
+let isDiscoveryRefused = false
+// The turn an earlier load left, read at session.start and taken up when the
+// link is in hand, which for a discovered link may be a later turn.
+let kept: BridgeTurn = IDLE
+// This session's `isInteractive`, so a `session-start` emitted after a later
+// discovery carries the same value the one at session.start would have.
+let startIsInteractive = false
 
 function emit($: EngineInterface, kind: string, fields: Record<string, unknown>): void {
   if (link === null) return
@@ -249,7 +271,8 @@ async function takeUpTurn($: EngineInterface, kept: BridgeTurn): Promise<void> {
 // send is waiting, or empty after POLL_WAIT_MS. A hot reload drops this
 // environment, and with it the loop; the new load's session.start starts
 // another, and the host answers the superseded poll with 409.
-async function pollLoop($: EngineInterface, target: BridgeLink): Promise<void> {
+async function pollLoop($: EngineInterface, initial: BridgeLink): Promise<void> {
+  let target = initial
   let backoffMs = 250
   for (;;) {
     try {
@@ -264,9 +287,93 @@ async function pollLoop($: EngineInterface, target: BridgeLink): Promise<void> {
       void drain($)
     } catch {
       await wait($, backoffMs)
+      const isAtMaxBackoff = backoffMs >= MAX_BACKOFF_MS
       backoffMs = Math.min(backoffMs * 2, MAX_BACKOFF_MS)
+      if (!isAtMaxBackoff || target.isAmbient !== true) continue
+      // A host that restarts sweeps every per-session socket directory, so a
+      // discovered link is dead for good and no variable will bring a new
+      // one: asking the discovery socket again is the only way back. Only a
+      // discovered link does this, and only once the backoff has topped out,
+      // so a host that is merely slow is not asked for a second link.
+      const found = await hello($)
+      if (found) {
+        target = found
+        link = found
+        await $.state.set(LINK, found).catch(() => undefined)
+        backoffMs = 250
+        continue
+      }
+      // Refused for good: this session has no host, and nothing left to poll.
+      if (isDiscoveryRefused) {
+        link = null
+        await $.state.set(LINK, null).catch(() => undefined)
+        return
+      }
     }
   }
+}
+
+// Where the Codello host keeps its sockets: the variable Codello sets, the
+// name it had before the rename, else the default under the home directory.
+async function configDirOf($: EngineInterface): Promise<string | undefined> {
+  const configured = (await $.env.get('CODELLO_CONFIG_DIR')) || (await $.env.get('CODETOGO_CONFIG_DIR'))
+  if (configured) return configured
+  const home = await $.env.get('HOME')
+  return home ? `${home}/.codetogo` : undefined
+}
+
+// Asks a host that may be running for a link of this session's own. The
+// discovery socket takes no token: anyone who can open it is already on the
+// machine as this user, and the token it hands back is what the per-session
+// socket checks from then on.
+//
+// A 403 means the host refuses this session for good, most often because it
+// is one the host already owns through the environment. Anything else, a
+// malformed answer, or a throw (the usual case, since with no host running
+// the socket file does not exist) means no link for now.
+async function hello($: EngineInterface): Promise<BridgeLink | null> {
+  if (discoverySocket === null || isDiscoveryRefused) return null
+  try {
+    const body: Hello = {
+      sessionId: await $.session.id(),
+      cwd: await $.session.cwd(),
+      isInteractive: startIsInteractive,
+      loadId,
+    }
+    const res = await $.http.fetch(BRIDGE_ORIGIN + HELLO_PATH, {
+      method: 'POST',
+      socketPath: discoverySocket,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    if (res.status === 403) {
+      isDiscoveryRefused = true
+      return null
+    }
+    if (!res.ok) return null
+    const answer = parseHello(res.text)
+    return answer === null ? null : { ...answer, isAmbient: true }
+  } catch {
+    return null
+  }
+}
+
+// Takes up the link: keeps it where a hot reload reads it, tells the host the
+// session is here, takes up whatever an earlier load left undelivered, and
+// starts the inbound poll. The loops start from a timer so the hook that
+// called this, which the first prompt waits on, returns at once.
+async function connect($: EngineInterface, found: BridgeLink): Promise<void> {
+  link = found
+  // An environment link was written by resolveLink, before `next(e)`; a
+  // discovered one is written here, in the same place a reload reads it from.
+  if (found.isAmbient === true) await $.state.set(LINK, found).catch(() => undefined)
+  emit($, 'session-start', { isInteractive: startIsInteractive })
+  await takeUpTurn($, kept)
+  kept = IDLE
+  $.clock.after(0, () => {
+    void pollLoop($, found)
+    void deliverDue($)
+  })
 }
 
 // Reads the host's address from the environment on a cold start, then unsets
@@ -289,26 +396,26 @@ async function resolveLink($: EngineInterface): Promise<BridgeLink | null> {
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    let kept: BridgeTurn = IDLE
+    startIsInteractive = e.isInteractive
     try {
       link = await resolveLink($)
       // A hot reload takes up the turn the last load left, held sends included.
       kept = (await $.state.get(TURN)).value ?? IDLE
+      if (link === null) {
+        // A session Codello spawned takes its link from the environment or
+        // not at all: it is one the host already owns, and the variables are
+        // gone only because the first load unset them, which a hot reload
+        // covers through the link in session state.
+        const isSpawned = Boolean((await $.env.get('CODELLO_SESSION')) || (await $.env.get('CODETOGO_SESSION')))
+        const configDir = isSpawned ? undefined : await configDirOf($)
+        discoverySocket = configDir === undefined ? null : `${configDir}/${AMBIENT_SOCKET_RELATIVE}`
+        link = await hello($)
+      }
     } catch {
       link = null
     }
     const started = await next(e)
-    if (link) {
-      const target = link
-      emit($, 'session-start', { isInteractive: e.isInteractive })
-      await takeUpTurn($, kept)
-      // Started from a timer so session.start, which the first prompt waits
-      // on, returns at once.
-      $.clock.after(0, () => {
-        void pollLoop($, target)
-        void deliverDue($)
-      })
-    }
+    if (link) await connect($, link)
     return started
   })
 
@@ -319,6 +426,13 @@ export const register: Register = on => {
 
   // Main loop only: a subagent's run raises no turn.start.
   on('turn.start', async ($, e, next) => {
+    // A host that starts after this session did is found here: one hello per
+    // turn, before the turn is marked running, so the connect below takes up
+    // an idle turn and this turn's turn-start still reaches the host.
+    if (link === null) {
+      const found = await hello($)
+      if (found) await connect($, found)
+    }
     await setTurn($, { ...turn, isRunning: true })
     emit($, 'turn-start', { turnId: e.turnId })
     return next(e)
