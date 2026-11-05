@@ -39,7 +39,7 @@ Recommended: Switch to Postgres.
 
 Keep the question that short. Anything longer, such as a multi-step plan, a list of files, or draft text, goes in `details`.
 
-Give 1 to 3 `options`. Put your recommendation first; the card marks the first option Recommended. Leave `options` out when the answer is open-ended. The user can always type their own answer, or skip the decision.
+Give 1 to 3 `options`. Put your recommendation first; the card marks the first option Recommended. Leave `options` out when the answer is open-ended. The user can always type their own answer, or skip the decision, so every option is a real answer: never an "Other" option, and never a bare "Recommended" one. A current CLI refuses both.
 
 Write each option as `Label: one-line description`, so a tap on it makes sense without the question above:
 
