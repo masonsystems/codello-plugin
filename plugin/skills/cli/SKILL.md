@@ -194,9 +194,9 @@ codello done --failed -m "Staging DB unreachable"        # could not be done (sk
 codello quit                                             # the user said "do X and quit" and X succeeded (skill: quit)
 codello emergency -m "Prod API 500s; rolled back, failing" # harm happening now you cannot contain; any agent (skill: emergency)
 codello decide --file - <<'JSON'  # every decision only the user can make, in one call; answers return as one prompt (skill: decide)
-[{"question": "<what, why, recommendation>", "options": ["Rec", "Other"], "details": "<the full text being approved>"}]
+[{"question": "<what, why, recommendation>", "options": ["<recommended>", "<alternative>"], "details": "<the full text being approved>"}]
 JSON
-codello decide "<what, why, recommendation>" --options "Rec|Other" --details "<markdown>"  # one decision
+codello decide "<what, why, recommendation>" --options "<recommended>|<alternative>" --details "<markdown>"  # one decision
 codello watch <session>                                  # ask the user to let this session decide another's routine prompts (skill: watch-policy)
 codello permit <id> allow                                # as a watcher, allow one prompt once; `pass` sends it to the user (skill: watch-policy)
 codello secret list                                      # names of the credentials this session holds (skill: secrets)
