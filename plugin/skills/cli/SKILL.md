@@ -273,8 +273,9 @@ pre-compact agent id can still be resolved to a project.
 - **Never run bare `codello stop`** to fix something. It kills every PTY on the machine
   and cuts the user off from their phone. `codello restart` preserves sessions. To close
   one session, run `codello stop <session-id>` (full id or unique prefix): it closes only
-  that session, which stays reopenable from the app. Several ids close several sessions,
-  all or none, and a session with an open card closes only with `--force`. It needs a CLI whose
+  that session, which stays reopenable from the app. Several ids close several sessions;
+  nothing closes while any id fails to resolve or names a session with an open card, unless
+  `--force`. It needs a CLI whose
   `codello spawn --help` lists `--prompt-file`; an older CLI reads the id as a request to
   stop the server.
 - **`codello logs` reads *production* by default** even while you're testing elsewhere;
