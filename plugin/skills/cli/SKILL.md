@@ -90,6 +90,16 @@ codello sessions --json | jq -r \
    | "\(.shortId) \(.state) \(.displayName) — \(.cwd)"'
 ```
 
+**Which sessions wait on an open decision card?** `codello decide list --all` lists every live session's `codello decide` cards that have not reached their agent, one per line: the session's short id and name, the decision id, its status (`open`, `answered`, or `dismissed`), how long ago it was posted, and the question's first line. `--session <id-prefix>` narrows it to one session, and `--json` gives `sessionId`, `sessionName`, `decisionId`, `status`, `revisions`, `postedAt`, and `question`. It only reads: another session's cards stay that session's to revise or withdraw, and the user's to answer. `codello sessions --json` also counts each live terminal session's open cards in `openDecisions`, absent on a host too old to count them:
+
+```bash
+codello decide list --all
+codello sessions --json | jq -r \
+  '.[] | select(.state=="waiting-on-you") | "\(.shortId) \(.openDecisions // "?") open card(s) \(.displayName)"'
+```
+
+A session that is `waiting-on-you` with `openDecisions` of 0 is waiting on something other than a card, such as a PR review or a question in its reply.
+
 **What's running in a given project?**
 
 ```bash
