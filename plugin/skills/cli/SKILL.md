@@ -107,7 +107,7 @@ codello sessions --done
 codello stop <id> <id> ...
 ```
 
-`codello stop` with ids closes all the named sessions or none. It refuses, and names each one, when a named session has an open card or question; read those with `codello decide list --all`. Pass `--force` only when the user has said those cards can go. A host too old to count cards is refused the same way. A session that reported done before the host's last restart keeps only its summary.
+`codello stop` with ids closes all the named sessions or none. It refuses, and names each one, when a named session has an open card or question; read those with `codello decide list --all`. Pass `--force` only when the user has said those cards can go. A host too old to count cards is refused the same way. A host restart drops the done state, so a session that reported before the host's last restart is not listed; read it with `codello tail <id>`.
 
 **What's running in a given project?**
 
