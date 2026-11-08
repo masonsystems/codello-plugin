@@ -19,6 +19,8 @@ The prompt arrives when the user has answered or dismissed every open decision, 
 
 Use it for a decision only the user can make that you would otherwise write into your reply and leave for them to answer in prose. Use `codello ask` instead when you must have the answer before you can do anything else in this turn; it waits for the answer and prints it.
 
+Post only decisions about your own work. When your work waits on another session's, such as a pull request that session opened and that has to merge before yours can, the decision is that session's. Check that the session is still open with `codello ls`; if it is, say in your reply that you're waiting on it, and if you declare a wait, name that session in the `-m` line ("waiting on <session>'s PR #734") instead of asking for the merge. Don't post a card asking to merge, deploy, or approve something another session owns, even when that session looks idle; its own card is usually already open. Post it yourself only when the user asked you to, or when the owning session has closed with the work still open. On November 7, 2026, three sessions waiting on one PR each posted a merge card beside the card from the session that opened it, and the user answered the same question four times.
+
 ## Write each decision so the user can act on it cold
 
 The user reads each decision alone, on a phone, possibly hours later, without your reply or the code in front of them. The card renders each decision's `question` as Markdown, so write it in three parts:
