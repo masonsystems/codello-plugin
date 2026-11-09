@@ -107,7 +107,7 @@ codello sessions --done
 codello stop <id> <id> ...
 ```
 
-`codello stop` with ids closes all the named sessions or none. It refuses, and names each one, when a named session has an open card or question; read those with `codello decide list --all`. Pass `--force` only when the user has said those cards can go. A host too old to count cards is refused the same way. A host restart drops the done state, so a session that reported before the host's last restart is not listed; read it with `codello tail <id>`.
+`codello stop` with ids closes nothing until every named session passes its checks. It refuses, and names each one, when an id is unknown or ambiguous, names a session Codello did not start, or names a session with an open card or question; read open cards with `codello decide list --all` and open questions in the app. Pass `--force` only when the user has said those cards and questions can go; it does not close a session Codello did not start. Once the checks pass, a close the host refuses is reported and does not undo the others. A host too old to count cards is refused the same way. A host restart drops the done state, so a session that reported before the host's last restart is not listed; read it with `codello tail <id>`.
 
 **What's running in a given project?**
 
@@ -274,8 +274,8 @@ pre-compact agent id can still be resolved to a project.
   and cuts the user off from their phone. `codello restart` preserves sessions. To close
   one session, run `codello stop <session-id>` (full id or unique prefix): it closes only
   that session, which stays reopenable from the app. Several ids close several sessions;
-  nothing closes while any id fails to resolve or names a session with an open card, unless
-  `--force`. It needs a CLI whose
+  nothing closes while any id fails to resolve, or names a session with an open card or
+  question and `--force` is not given. It needs a CLI whose
   `codello spawn --help` lists `--prompt-file`; an older CLI reads the id as a request to
   stop the server.
 - **`codello logs` reads *production* by default** even while you're testing elsewhere;
