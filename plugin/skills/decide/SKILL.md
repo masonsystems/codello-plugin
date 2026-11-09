@@ -26,7 +26,7 @@ Post only decisions about your own work. When your work waits on another session
 The user reads each decision alone, on a phone, possibly hours later, without your reply or the code in front of them. The card renders each decision's `question` as Markdown, so write it in three parts:
 
 1. A one-line ask that names the thing: the file, the PR, the flag, the service.
-2. Two to four `- ` bullets: why it matters (what goes wrong, or what it costs), and what each option does.
+2. Two to four `- ` bullets: why it matters (what goes wrong, or what it costs), and what each option does. When the decision comes from someone else's request, an email, or an earlier day's work, the first bullet says where it came from: who asked, when, and what. Without it the user can't tell what the card is about; on November 8, 2026 a follow-up card from a maintenance session reached the user with no origin, and they had to ask what it was for.
 3. A `Recommended: …` line.
 
 ```markdown
