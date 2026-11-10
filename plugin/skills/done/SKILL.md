@@ -43,10 +43,10 @@ Before you run `codello done`, stop any wake-up you scheduled for this task: `Sc
 
 Never keep a session open, or set a timer on it, for a step more than an hour away, such as a check tomorrow morning or a change in tonight's maintenance window. A session that waits hours sits on the user's list with nothing to do. Hand the step off instead, then run `codello done` once nothing else is due within the hour and no question or decision is open:
 
-- **Schedule a fresh session for it** with `codello schedule add -n <name> -d <dir> -a <ISO time> --prompt-file <seed>` (`/codello:schedule`). The new session has no memory of this one, so the seed carries everything it needs: the task, what is done so far, the PR and ticket numbers, and the user's answers.
-- **Or report it to whoever started this session**, when that session or person will schedule it. Put the time and the step in the `-m` summary, such as `Later: 9:00 AM tomorrow: confirm the nightly report ran with the fix`.
+- **Schedule a fresh session for it** with `/codello:schedule`, which picks background or interactive and checks the run's permissions. The new session has no memory of this one, so the seed carries everything it needs: the task, what is done so far, the PR and ticket numbers, and the user's answers.
+- **Or, when another agent or session started this one and acts on its report**, put the time and the step in the `-m` summary, such as `Later: 9:00 AM tomorrow: confirm the nightly report ran with the fix`, and let it schedule the step. When a person started this session, schedule the step yourself: a line in the summary sends them no push.
 
-A step handed off this way is not unfinished work under the list above.
+A step handed off either way is not unfinished work or a follow-up under the list above. Cancel any timer or wake-up you set for it before you run `codello done`.
 
 ## Failed means you could not do it
 
