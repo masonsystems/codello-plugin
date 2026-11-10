@@ -56,6 +56,10 @@ door to the `codello` CLI:
   `session-status set waiting` / `clear`, `decide`, `secret request`, `emergency`) and point at the skill
   for each.
   Outside a Codello session the hook prints nothing.
+- **PreToolUse hook** — in a Codello session, an agent's own `codello session-status`,
+  `codello decide`, and `codello done` calls run without a permission prompt, as long as the
+  Bash command is exactly one such call. Anything chained to it still prompts. Needs a `codello`
+  CLI with `codello hook allow-reporting`; an older CLI leaves every call to the normal prompt.
 
 ## Prerequisites
 
@@ -240,6 +244,25 @@ new one can rank too low to be offered, so the hook makes sure the commands are 
 when no skill loads. It is a no-op when `CODELLO_SESSION` (or the older `CODETOGO_SESSION`)
 is unset or `codello` is not on `PATH`, so the plugin adds nothing to an unrelated Claude
 session.
+
+## Reporting commands run without a prompt
+
+The plugin also ships a `PreToolUse` hook on Bash (`scripts/allow-reporting.sh`). The plugin
+tells every agent to run `codello session-status`, `codello decide`, and `codello done`, and
+each one only reports to you, yet an allow rule such as `Bash(codello session-status *)` misses
+some of them: Claude Code splits a command at a `;` even inside a quoted `-m` message, so
+`-m "Reboots done; tonight's run starts at 6:15 PM CST."` prompts. The hook asks the `codello`
+CLI (`codello hook allow-reporting`), which allows the call only when the whole command is one
+`session-status`, `decide`, or `done` call: no command substitution, no unquoted `;`, `&`, `|`,
+`(`, `)`, `<`, or `>`, at most a trailing `2>&1 | tail -N` or `| head -N`, and, for `decide`
+only, one heredoc body. Anything else gets no decision and goes through the normal permission
+flow, and your deny and ask rules still apply. The full rules are in
+[Claude Code hooks](https://github.com/masonsystems/codetogo/blob/main/docs/claude-code-hooks.md)
+in the Codello repository.
+
+The hook does nothing outside a Codello session or when it cannot find `codello`. A `codello`
+CLI older than 1.3.2 has no `hook allow-reporting`; the hook then prints nothing and exits 0,
+so every call prompts as it did before, until the CLI is updated.
 
 ## The Codello bridge mod
 
