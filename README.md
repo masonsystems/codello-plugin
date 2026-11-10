@@ -253,8 +253,8 @@ each one only reports to you, yet an allow rule such as `Bash(codello session-st
 some of them: Claude Code splits a command at a `;` even inside a quoted `-m` message, so
 `-m "Reboots done; tonight's run starts at 6:15 PM CST."` prompts. The hook asks the `codello`
 CLI (`codello hook allow-reporting`), which allows the call only when the whole command is one
-`session-status`, `decide`, or `done` call: no command substitution, no unquoted `;`, `&`, `|`,
-`(`, `)`, `<`, or `>`, at most a trailing `2>&1 | tail -N` or `| head -N`, and, for `decide`
+`session-status`, `decide`, or `done` call: no backtick, no `$` outside single quotes, no
+unquoted `;`, `&`, `|`, `(`, `)`, `<`, or `>`, at most a trailing `2>&1 | tail -N` or `| head -N`, and, for `decide`
 only, one heredoc body. Anything else gets no decision and goes through the normal permission
 flow, and your deny and ask rules still apply. The full rules are in
 [Claude Code hooks](https://github.com/masonsystems/codetogo/blob/main/docs/claude-code-hooks.md)
