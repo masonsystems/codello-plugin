@@ -79,7 +79,7 @@ A lone decision can also go on the command line: `codello decide "<question>" --
 
 ## Keep the ids, and change a decision in place
 
-`codello decide` prints one decision id per line. Keep them: you need an id to change a decision you already posted. If you lost them, `codello decide list` prints each decision of this session that has not reached you yet, one per line with its id, status, and question; `--json` prints the same as JSON.
+`codello decide` prints one decision id per line. Keep them: you need an id to change a decision you already posted. If you lost them, `codello decide list` prints each decision of this session that has not reached you yet, one per line with its id, status, and question; `--json` prints the same as JSON. To see other sessions' cards, `codello decide list --all` lists every live session's, and `--session <id or prefix>` one session's, with the session's name and when each card was posted. Those only read: you can revise or withdraw only your own session's decisions.
 
 When you learn something that changes a decision you already posted, change that decision. Never post a new decision that says it replaces, supersedes, or corrects an earlier card: the user would see both cards and could answer the stale one.
 
@@ -122,6 +122,8 @@ Run the command with `dangerouslyDisableSandbox: true`. The CLI talks to the loc
 | `codello decide revise <id> --file -` | The same, with one JSON entry read from stdin |
 | `codello decide withdraw <id>...` | Remove decisions you posted; all or none |
 | `codello decide list [--json]` | List this session's decisions that have not reached you, with their ids |
+| `codello decide list --all [--json]` | List every live session's decisions that have not reached their agent; read-only |
+| `codello decide list --session <id> [--json]` | The same for one session, by id or prefix |
 
 ## Related
 
