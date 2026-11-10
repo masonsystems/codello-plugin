@@ -19,6 +19,8 @@ The prompt arrives when the user has answered or dismissed every open decision, 
 
 Use it for a decision only the user can make that you would otherwise write into your reply and leave for them to answer in prose. Use `codello ask` instead when you must have the answer before you can do anything else in this turn; it waits for the answer and prints it.
 
+Use it too when a command you need was blocked and only the user can allow it. A request written in your reply reaches nobody: the user reads the card, not the terminal. Ask in plain words what the command does and what it unblocks ("Let me read the failing check from the linter's API, so I can fix the last red check on PR #412?"), and put the exact command in `details`. Never ask the user to "allow the blocked command" with no account of what it does. On November 9, 2026, a session asked twice in its replies for two blocked commands, and the user answered "I don't know what you're asking me."
+
 Post only decisions about your own work. When your work waits on another session's, such as a pull request that session opened and that has to merge before yours can, the decision is that session's. Check that the session is still open with `codello ls`; if it is, say in your reply that you're waiting on it, and if you declare a wait, name that session in the `-m` line ("waiting on <session>'s PR #734") instead of asking for the merge. Don't post a card asking to merge, deploy, or approve something another session owns, even when that session looks idle; its own card is usually already open. Post it yourself only when the user asked you to, or when the owning session has closed with the work still open. On November 7, 2026, three sessions waiting on one PR each posted a merge card beside the card from the session that opened it, and the user answered the same question four times.
 
 ## Write each decision so the user can act on it cold
@@ -26,7 +28,7 @@ Post only decisions about your own work. When your work waits on another session
 The user reads each decision alone, on a phone, possibly hours later, without your reply or the code in front of them. The card renders each decision's `question` as Markdown, so write it in three parts:
 
 1. A one-line ask that names the thing: the file, the PR, the flag, the service.
-2. Two to four `- ` bullets: why it matters (what goes wrong, or what it costs), and what each option does.
+2. Two to four `- ` bullets: why it matters (what goes wrong, or what it costs), and what each option does. When the decision comes from someone else's request, an email, or an earlier day's work, the first bullet says where it came from: who asked, when, and what. Without it the user can't tell what the card is about; on November 8, 2026 a follow-up card from a maintenance session reached the user with no origin, and they had to ask what it was for.
 3. A `Recommended: …` line.
 
 ```markdown
