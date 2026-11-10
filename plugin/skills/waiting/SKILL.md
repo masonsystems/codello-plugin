@@ -31,6 +31,8 @@ Run it silently in the turn that leaves something only the user can do, before y
 
 Never set it for work you started yourself: CI on your own push, a `Monitor` or background command, a deploy, a subagent. When that work finishes you resume on your own, so the user is not the one you are waiting on, and the row would tell them it is their move while you keep working. Codello already shows a session parked on background work as busy. Set it only once something is left for the user, for example when CI is green and the PR is ready for review.
 
+Never set it, or keep the session open on a timer, for a step of your own more than an hour away, such as a check tomorrow morning. Schedule a fresh session for that step or report it in your `codello done` summary, then run `codello done`; the `done` skill has the details.
+
 One declaration per wait. A second `set` replaces the line on the row and sends another push, so declare once and declare again only when what the user has to do has changed, or when a declaration was dropped.
 
 The declaration fires at the end of the turn. If the user types before the turn ends, the armed declaration is dropped: no dot, no push, because their message may already be the answer. If that message did not answer you, declare again in the next turn.

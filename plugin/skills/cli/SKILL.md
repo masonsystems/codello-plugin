@@ -202,6 +202,8 @@ follow-up — so the session doesn't sit in the user's list looking like it need
 
 When this session runs on timers or wake-ups and its routine turn end shouldn't push, run `codello push-level only-when-waiting`; permission prompts, questions, and declared waits still push. An older Codello host answers that it needs an update; carry on without it.
 
+`codello timer add` and `ScheduleWakeup` are for steps due within the hour, such as CI on your own push. Never keep a session open, or set a timer on it, for a step more than an hour away: schedule a fresh session for it with `/codello:schedule`, or report it to whoever started this session in the `codello done -m` summary, then run `codello done` (skill: done).
+
 The commands that report on the task itself also target this session implicitly, and each
 has its own skill with the rules for when to run it:
 

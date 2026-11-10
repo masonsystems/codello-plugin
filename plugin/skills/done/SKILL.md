@@ -39,6 +39,15 @@ In each of those cases, end the turn normally and say plainly what is pending. T
 
 Before you run `codello done`, stop any wake-up you scheduled for this task: `ScheduleWakeup` with `stop: true`, `CronDelete` for a cron job you made, and `codello timer cancel <id>` for a timer you set on this session. A fallback wake-up left running fires after the report and restarts finished work.
 
+## A step more than an hour away does not keep the session open
+
+Never keep a session open, or set a timer on it, for a step more than an hour away, such as a check tomorrow morning or a change in tonight's maintenance window. A session that waits hours sits on the user's list with nothing to do. Hand the step off instead, then run `codello done` once nothing else is due within the hour and no question or decision is open:
+
+- **Schedule a fresh session for it** with `codello schedule add -n <name> -d <dir> -a <ISO time> --prompt-file <seed>` (`/codello:schedule`). The new session has no memory of this one, so the seed carries everything it needs: the task, what is done so far, the PR and ticket numbers, and the user's answers.
+- **Or report it to whoever started this session**, when that session or person will schedule it. Put the time and the step in the `-m` summary, such as `Later: 9:00 AM tomorrow: confirm the nightly report ran with the fix`.
+
+A step handed off this way is not unfinished work under the list above.
+
 ## Failed means you could not do it
 
 Use `--failed` when the task cannot be completed as asked — a dependency that does not exist, an environment you cannot reach, an approach that turned out to be impossible. A failed session sends the user a push, because they have been waiting on work that is not coming.
