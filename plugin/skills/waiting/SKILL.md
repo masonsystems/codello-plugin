@@ -11,7 +11,7 @@ Codello shows the user a needs-you dot when a turn ends on a question or a permi
 codello session-status set waiting -m "PR ready for review: https://github.com/org/repo/pull/123"
 ```
 
-The command arms the declaration and returns at once. It fires when the current turn ends, exactly as `codello done` does: the session row shows the needs-you dot with your `-m` line, and one push goes out carrying the same line. Nothing you do afterward moves it, not a watcher firing, not the turn that watcher starts.
+The command arms the declaration and returns at once. It fires when the current turn ends, exactly as `codello done` does: the session row shows the needs-you dot with your `-m` line, and one push goes out carrying the same line. A watcher firing does not retire it. While a turn that watcher starts runs, the row shows you working, and the wait comes back with no second push when that turn ends.
 
 ## Only the session's lead agent runs this
 
@@ -29,6 +29,10 @@ Run it silently in the turn that leaves something only the user can do, before y
 - A blocker only they can clear: an environment you cannot reach, an account you do not have, a change on a system outside your access.
 - You are handing back a **Blocker** or **Decision needed** item.
 
+Never set it for work you started yourself: CI on your own push, a `Monitor` or background command, a deploy, a subagent. When that work finishes you resume on your own, so the user is not the one you are waiting on, and the row would tell them it is their move while you keep working. Codello already shows a session parked on background work as busy. Set it only once something is left for the user, for example when CI is green and the PR is ready for review.
+
+Never set it, or keep the session open on a timer, for a step of your own more than an hour away, such as a check tomorrow morning. Hand it off as the `done` skill says, then run `codello done`.
+
 One declaration per wait. A second `set` replaces the line on the row and sends another push, so declare once and declare again only when what the user has to do has changed, or when a declaration was dropped.
 
 The declaration fires at the end of the turn. If the user types before the turn ends, the armed declaration is dropped: no dot, no push, because their message may already be the answer. If that message did not answer you, declare again in the next turn.
@@ -38,7 +42,7 @@ The declaration fires at the end of the turn. If the user types before the turn 
 Run `codello session-status clear` when the wait ends without the user typing in the session:
 
 - The thing you were waiting for arrived another way: the PR got merged, CI finished, the blocker went away, a background task delivered what you needed.
-- You are about to keep working on your own after all.
+- You are about to keep working on your own after all. Clear it before your first tool call in that turn, not at its end.
 
 You do not need to clear it when the user replies. Their message, typed in the terminal or sent from the phone, retires the declaration on its own, and so do `codello done` and the user dismissing the session from the dashboard. If the next user message arrives and you still need something, declare again in that turn.
 

@@ -6,6 +6,8 @@ allowed-tools: Bash
 
 You are the front door to `codello schedule`. A scheduled run launches a **fresh** Claude Code run on this machine, in a chosen directory, at a cron or one-shot time. It inherits the real files, tools, and credentials of that directory but has **no memory of this conversation**, so the prompt you write must be fully self-contained.
 
+This is also how a session hands off a step of its own task that is more than an hour away, such as a check tomorrow morning, instead of keeping itself open on a timer. Write the seed so the new session can finish the step alone: the task, what is done so far, the PR and ticket numbers, and the user's answers. Once the schedule is saved and nothing else is due within the hour, the current session runs `codello done` (the `done` skill).
+
 A schedule fires in one of two modes:
 
 - **Background** (`--background`): a headless `claude -p` child process. It has no session row, no viewer, and no permission prompt. It reads the same permission settings files as any Claude Code run in that directory, including `defaultMode`. A tool call that Claude Code denies for a missing allow rule is recorded as a permission denial, and the run is recorded as failed with the denied tool names. When a background run finishes, its final message is its result: the first 200 characters show on the run's row, and the full transcript is on the **Background runs** page and in `codello schedule runs`. A failed run sends a push to the user's phone and a bell notification.

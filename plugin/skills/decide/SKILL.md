@@ -19,12 +19,16 @@ The prompt arrives when the user has answered or dismissed every open decision, 
 
 Use it for a decision only the user can make that you would otherwise write into your reply and leave for them to answer in prose. Use `codello ask` instead when you must have the answer before you can do anything else in this turn; it waits for the answer and prints it.
 
+Use it too when a command you need was blocked and only the user can allow it. A request written in your reply reaches nobody: the user reads the card, not the terminal. Ask in plain words what the command does and what it unblocks ("Let me read the failing check from the linter's API, so I can fix the last red check on PR #412?"), and put the exact command in `details`. Never ask the user to "allow the blocked command" with no account of what it does. On November 9, 2026, a session asked twice in its replies for two blocked commands, and the user answered "I don't know what you're asking me."
+
+Post only decisions about your own work. When your work waits on another session's, such as a pull request that session opened and that has to merge before yours can, the decision is that session's. Check that the session is still open with `codello ls`; if it is, say in your reply that you're waiting on it, and if you declare a wait, name that session in the `-m` line ("waiting on <session>'s PR #734") instead of asking for the merge. Don't post a card asking to merge, deploy, or approve something another session owns, even when that session looks idle; its own card is usually already open. Post it yourself only when the user asked you to, or when the owning session has closed with the work still open. On November 7, 2026, three sessions waiting on one PR each posted a merge card beside the card from the session that opened it, and the user answered the same question four times.
+
 ## Write each decision so the user can act on it cold
 
 The user reads each decision alone, on a phone, possibly hours later, without your reply or the code in front of them. The card renders each decision's `question` as Markdown, so write it in three parts:
 
 1. A one-line ask that names the thing: the file, the PR, the flag, the service.
-2. Two to four `- ` bullets: why it matters (what goes wrong, or what it costs), and what each option does.
+2. Two to four `- ` bullets: why it matters (what goes wrong, or what it costs), and what each option does. When the decision comes from someone else's request, an email, or an earlier day's work, the first bullet says where it came from: who asked, when, and what. Without it the user can't tell what the card is about; on November 8, 2026 a follow-up card from a maintenance session reached the user with no origin, and they had to ask what it was for.
 3. A `Recommended: …` line.
 
 ```markdown
@@ -39,7 +43,7 @@ Recommended: Switch to Postgres.
 
 Keep the question that short. Anything longer, such as a multi-step plan or a list of files, goes in `details`; text the user may want to edit goes in `draft`.
 
-Give 1 to 3 `options`. Put your recommendation first; the card marks the first option Recommended. Leave `options` out when the answer is open-ended. The user can always type their own answer, or skip the decision.
+Give 1 to 3 `options`. Put your recommendation first; the card marks the first option Recommended. Leave `options` out when the answer is open-ended. The user can always type their own answer, or skip the decision, so every option is a real answer: never an "Other" option, and never a bare "Recommended" one. A current CLI refuses both.
 
 Write each option as `Label: one-line description`, so a tap on it makes sense without the question above:
 
@@ -101,7 +105,7 @@ A lone decision can also go on the command line: `codello decide "<question>" --
 
 ## Keep the ids, and change a decision in place
 
-`codello decide` prints one decision id per line. Keep them: you need an id to change a decision you already posted. If you lost them, `codello decide list` prints each decision of this session that has not reached you yet, one per line with its id, status, and question; `--json` prints the same as JSON.
+`codello decide` prints one decision id per line. Keep them: you need an id to change a decision you already posted. If you lost them, `codello decide list` prints each decision of this session that has not reached you yet, one per line with its id, status, and question; `--json` prints the same as JSON. To see other sessions' cards, `codello decide list --all` lists every live session's, and `--session <id or prefix>` one session's, with the session's name and when each card was posted. Those only read: you can revise or withdraw only your own session's decisions.
 
 When you learn something that changes a decision you already posted, change that decision. Never post a new decision that says it replaces, supersedes, or corrects an earlier card: the user would see both cards and could answer the stale one.
 
@@ -145,6 +149,8 @@ Run the command with `dangerouslyDisableSandbox: true`. The CLI talks to the loc
 | `codello decide revise <id> --file -` | The same, with one JSON entry read from stdin |
 | `codello decide withdraw <id>...` | Remove decisions you posted; all or none |
 | `codello decide list [--json]` | List this session's decisions that have not reached you, with their ids |
+| `codello decide list --all [--json]` | List every live session's decisions that have not reached their agent; read-only |
+| `codello decide list --session <id> [--json]` | The same for one session, by id or prefix |
 
 ## Related
 
