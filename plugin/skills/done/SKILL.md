@@ -1,6 +1,6 @@
 ---
 name: done
-description: "Run `codello done`, or `codello done --failed`, at the end of a turn when the task is finished and nothing is left for the user: no PR to review, no question, no decision. Marks the session done (green check) or failed (red ✕). Also /codello:done."
+description: "Run `codello done`, or `codello done --failed`, at the end of a turn only when the task is finished and the user can close the session after reading only the `-m` line: no PR to review, no question, no decision, and no findings, answer, or report they still have to read. Marks the session done (green check) or failed (red ✕). Also /codello:done."
 ---
 
 # Report what this session ended as
@@ -15,7 +15,7 @@ codello done -m "Fixed the parser crash and merged the pull request."
 codello done --failed -m "The staging database is unreachable, so the migration never ran."
 ```
 
-The command arms the outcome and returns at once. It lands when the current turn ends, so run it and then write your reply as normal — that reply is what the user reads when they open the session.
+The command arms the outcome and returns at once. It lands when the current turn ends, so run it and then write your reply as normal. The user may close a done session without opening it, so nothing they need can live only in that reply.
 
 ## Only the session's lead agent runs this
 
@@ -23,19 +23,32 @@ If another agent spawned you — as a subagent, a Task delegate, or a teammate �
 
 Report your result to the agent that spawned you and let it decide what the session ended as. The host refuses a delegate's report with `You are a delegate agent (a subagent or teammate), not this session's lead.` If you see that line, hand your result back instead.
 
-## Done means nothing is left for the user
+## Done means the user can close the session without reading it
 
-This is the whole rule, and it is stricter than "I finished my part."
+Before you run `codello done`, ask one question: can the user close this session after reading only the `-m` line? Run it only when the answer is yes. That is stricter than "I finished my part," and stricter than "I have nothing more to do."
 
 Do **not** run `codello done` when any of these is true:
 
+- The result of the task is something the user has to read: findings from an investigation, the answer to a question they asked, a report, a comparison, a plan, a recommendation. You finished gathering it, but they have not read it, and a done session tells them they do not need to.
 - A pull request is open and waiting for the user to review, approve, or merge it.
 - There is a follow-up for them: a command to run, a credential to add, a setting to change, a deploy to approve.
 - You asked a question, or a decision is theirs to make.
 - You want them to check, confirm, or look at something.
 - Part of the work is unfinished, deferred, or blocked.
 
-In each of those cases, end the turn normally and say plainly what is pending. The ordinary "needs you" indicator is the right signal, and it is the one the user acts on. Marking such a session done is worse than saying nothing: it tells them there is nothing to come back for, and the session removes itself a day later.
+In each of those cases, declare the wait with `codello session-status set waiting -m "<what the user has to do or read>"` (the `waiting` skill, `/codello:waiting`), end the turn, and say plainly in the reply what is pending. Marking such a session done is worse than saying nothing: it tells them there is nothing to come back for, and the session removes itself a day later.
+
+The same request can end either way. What decides it is what the user still has to take in:
+
+| The user asked | How it ended | Report |
+|---|---|---|
+| Fix the flaky upload test | Fixed, and the fix is merged | `codello done -m "Fixed the flaky upload test: the mock clock was shared between cases."` |
+| Find out why uploads fail on iPad | The cause and two possible fixes are written up in the reply | `codello session-status set waiting -m "Read: uploads fail on iPad because the picker returns no file. Two fixes compared."` |
+| Find out why uploads fail on iPad, and fix it | Fixed and merged, and the cause fits in one line | `codello done -m "Uploads on iPad work again: the picker returned no file, now handled."` |
+
+A short answer in a live back-and-forth, where the user is plainly reading along, needs neither command: end the turn normally.
+
+When another agent or session started this one and reads its report, that agent is the reader, not a person: report `codello done` with the result in the report.
 
 Before you run `codello done`, stop any wake-up you scheduled for this task: `ScheduleWakeup` with `stop: true`, `CronDelete` for a cron job you made, and `codello timer cancel <id>` for a timer you set on this session. A fallback wake-up left running fires after the report and restarts finished work.
 
@@ -84,8 +97,9 @@ Nothing is armed until that line prints. If the command prints anything else, re
 
 ## Write the summary for a lock screen
 
-`-m` is one line, read on a phone, out of context, possibly a day later.
+`-m` is one line, read on a phone, out of context, possibly a day later. It is often all the user reads before they close the session, so it carries the whole outcome.
 
+- **If one line cannot carry what the user needs to know, the session is not done.** Set waiting and let them read the reply.
 - **Say what happened, not what you did all session.** "Merged the retry fix" beats "Investigated, wrote tests, and merged."
 - **Name the thing.** "Fixed the parser crash" tells the user which session this is; "All done" does not.
 - **For a failure, say what stopped you.** That is the line they act on.
