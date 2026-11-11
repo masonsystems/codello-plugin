@@ -34,6 +34,7 @@ Do **not** run `codello done` when any of these is true:
 - You asked a question, or a decision is theirs to make.
 - You want them to check, confirm, or look at something.
 - Part of the work is unfinished, deferred, or blocked.
+- A subagent, background shell, or monitor you started is still running. End the turn without reporting; task mode lets that turn end, and you resume when the work's notification arrives. Report once its result is in and handled.
 
 In each of those cases, end the turn normally and say plainly what is pending. The ordinary "needs you" indicator is the right signal, and it is the one the user acts on. Marking such a session done is worse than saying nothing: it tells them there is nothing to come back for, and the session removes itself a day later.
 
