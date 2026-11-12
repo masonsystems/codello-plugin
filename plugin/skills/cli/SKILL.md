@@ -166,6 +166,13 @@ per-viewer sizes that explain a clamped width) · `codello logs search "<text>" 
 (central logs across CLI, cloud, and relay — the user's phone has no console, so this is
 the only way to see client-side logs).
 
+**Resume every rate-limited session at once:** after the user lifts a usage limit early (extra usage, a different account), `codello send-all --rate-limited` types a message into every session on this host that stopped on the limit and prints the ones it reached. `-m "<text>"` replaces the default "The usage limit is lifted. Continue where you left off." `--stalled` does the same for sessions the host flags as stalled, with the host's stall nudge message as the default, and `--json` gives `only`, `text`, `sentTo` (PTY ids), and `failures`. It is the app's **Message Rate-Limited Sessions** command: the host picks the sessions from its live state, so a session that is working or idle is skipped, and it exits 1 when it could not reach one. A host too old for it says to run `codello restart`.
+
+```bash
+codello send-all --rate-limited
+codello send-all --rate-limited -m "Limit's reset. Pick up the PR review."
+```
+
 ## Reading `state`
 
 `state` is a derived, coarse verdict — use it, not `rawState`, for decisions:
