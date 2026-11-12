@@ -10,10 +10,16 @@ description: "Post every decision only the user can make in one `codello decide 
 ```
 Answers to your decisions:
 1. The cache key ignores the locale, so French users get English pages. Recommend a… → Add the locale
-2. Two unrelated fixes are on this branch. Recommend shipping them in one PR. → (dismissed)
+2. Two unrelated fixes are on this branch. Recommend shipping them in one PR. → (dismissed by you on iPhone)
 ```
 
 The prompt arrives when the user has answered or dismissed every open decision, when they tap Send answers to send what they have answered so far, or ahead of the next message they type.
+
+A dismissed decision says who dismissed it:
+
+- `(dismissed by you on <device>)` or `(dismissed by you)`: the user skipped it. That is their answer. Don't post the decision again unless they ask you to.
+- `(dismissed by Codello: <reason>)`: Codello ended the card without the user. Post it again if you still need the answer.
+- `(dismissed)`: a host older than this text; the source is unknown. Treat it as the user's Skip.
 
 ## When to use it
 
