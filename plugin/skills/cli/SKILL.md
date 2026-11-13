@@ -243,6 +243,18 @@ session later), **`/codello:copy`**, **`/codello:handoff`** · **`/codello:resum
 **`/codello:compact`** · **`/codello:fresh`** · **`/codello:continue`**. Prefer those over
 hand-rolling `codello spawn` / `schedule add` / `history`.
 
+## When this session is the Hub
+
+The Hub is the one session on a host that the user registered with `codello hub set`; the host wakes it with events from the other sessions. `codello hub status` shows the registration and its settings. The Hub's `codello message` to a session on the same host skips the user's approval card when the Hub's message setting covers that session:
+
+```bash
+codello hub messages tasks   # the default: the Hub's own tasks the user has not taken over
+codello hub messages all     # any live session on this host
+codello hub messages ask     # none: every message from the Hub waits for its card
+```
+
+A message to another host always waits for its card. A message the setting covers arrives labeled `From the Hub` in the target's chat; one the session refuses or never confirms goes back to its card. Change the setting only when the user asks: widening it lets the Hub skip cards the user would otherwise see. A host that predates the setting makes `codello hub messages` exit 1 and say to run `codello restart`.
+
 ## Older / dead sessions
 
 `sessions --json` lists only what's **live now**. For a session that has since ended,
