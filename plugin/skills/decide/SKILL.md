@@ -112,6 +112,10 @@ The export fix ships Friday.
 
 On the command line, use `--draft "<text>"`. `codello decide revise <id> --draft "<text>"` replaces the draft and drops the user's edits. If the CLI or the Codello server is too old for drafts, the call exits 1, posts nothing, and says so; put the text in `details` instead.
 
+## Fold a decision that settles another into it
+
+The user reads the cards in order and answers each before seeing the next. When one decision's answer depends on another (approve a guide, then where to publish it), put both in one card, or ask the one that settles the other and post the rest after the answer. Otherwise the user asks the later card's question in their answer to the first, and answers twice.
+
 ## Post every decision in one call
 
 Post all of a turn's decisions in one call, with a JSON list on stdin. Each entry has a `question`, and optionally `options` (a list of 1 to 3 strings, or up to 8 with `multiSelect`), `details`, `draft`, `multiSelect`, and `recommended`. The CLI checks every entry before it posts anything, so one bad entry posts none of them; fix it and run the call again. A quoted heredoc keeps the shell from touching the text:
