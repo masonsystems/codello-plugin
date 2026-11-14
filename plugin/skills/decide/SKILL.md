@@ -55,6 +55,10 @@ Write each option as `Label: one-line description`, so a tap on it makes sense w
 
 When a decision rests on a multi-step plan or other material longer than the bullets, put it in `details`. When a decision approves text (an email, a ticket comment, a PR description, a message), put that text in full in the decision's `details`, as Markdown: recipients, subject, and body. The card shows it behind a Details toggle under the question. Never write "see the reply", "the draft above", or "the note I drafted earlier": the user answers from the card, and your reply may be hours of scrolling away. `details` holds up to 16 KB.
 
+## Fold a decision that settles another into it
+
+The user reads the cards in order and answers each before seeing the next. When one decision's answer depends on another (approve a guide, then where to publish it), put both in one card, or ask the one that settles the other and post the rest after the answer. Otherwise the user asks the later card's question in their answer to the first, and answers twice.
+
 ## Post every decision in one call
 
 Post all of a turn's decisions in one call, with a JSON list on stdin. Each entry has a `question`, and optionally `options` (a list of 1 to 3 strings) and `details`. The CLI checks every entry before it posts anything, so one bad entry posts none of them; fix it and run the call again. A quoted heredoc keeps the shell from touching the text:
