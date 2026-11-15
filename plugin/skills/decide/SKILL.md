@@ -158,7 +158,7 @@ JSON
 codello decide withdraw 162d5b7d-754b-4d25-b885-d66f1b12715e
 ```
 
-Both exit 0 when the change is made. Exit 1 changes nothing, and stderr names each id it refused and why: an id that is not one of this session's open or answered decisions (it may already have reached you; its answer is in the prompt you got or will get), answers that are already on their way to you, a revise that would reopen an answered decision past the per-session limit on open decisions, or a Codello server too old for these commands, which says to run `codello restart`. When an answer already reached you, act on it or post a new decision about what changed; when answers are on their way, wait for them.
+Both exit 0 when the change is made. Exit 1 changes nothing, and stderr names each id it refused and why: an id that is not one of this session's open, queued, or answered decisions (it may already have reached you; its answer is in the prompt you got or will get), answers that are already on their way to you, a revise that would reopen an answered decision past the per-session limit on open decisions, or a Codello server too old for these commands, which says to run `codello restart`. When an answer already reached you, act on it or post a new decision about what changed; when answers are on their way, wait for them.
 
 ## Then declare the wait, and keep the decisions out of your reply
 
@@ -173,6 +173,7 @@ When a subagent, a teammate, or a review you are waiting on is still running and
 Run the command with `dangerouslyDisableSandbox: true`. The CLI talks to the local server, which a sandboxed command cannot reach.
 
 - Exit 0 means the host holds every decision. stdout is one decision id per line, in the order you posted them, and nothing else.
+- A session shows at most 8 open decisions. Post all of yours in one call anyway: the rest wait in a queue, and stderr says which opened and which are queued. Each queued one opens on its own, oldest first, when the user answers or skips an open one or you withdraw one, so don't post them again later. `codello decide list` shows them as `queued`, and you can revise or withdraw them like open ones.
 - Exit 1 means nothing was posted, and stderr says why: a bad entry (each one is named), not in a Codello session, Codello not running, or a Codello server too old to take decisions. Fix a bad entry and post again. If the CLI rejects `--file` or `--details` as an unknown option, it is too old for them: post one `codello decide "<question>" --options "..."` per decision instead, and put any text being approved in that question. Otherwise put the decisions in your reply, and say what stopped the command.
 
 ## Options
