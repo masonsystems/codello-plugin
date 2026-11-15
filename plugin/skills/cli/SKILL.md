@@ -249,9 +249,11 @@ The Hub is the one session on a host that the user registered with `codello hub 
 
 ```bash
 codello hub messages tasks   # the default: the Hub's own tasks the user has not taken over
-codello hub messages all     # any live session on this host
+codello hub messages all     # any live session on this host, once the user approves it on a device
 codello hub messages ask     # none: every message from the Hub waits for its card
 ```
+
+`tasks` and `ask` apply at once. `all` changes nothing until the user approves it: the command shows the user a card on their device and waits up to 10 minutes. It exits 0 only when the user approves; when they deny it or don't answer, it exits 1 and the setting stays as it was. Run it in the foreground, and don't run it again after a denial unless the user asks. A new Hub, including one moved with `codello hub set --replace`, starts at `tasks` even when the old Hub was at `all`.
 
 A message to another host always waits for its card. A message the setting covers arrives labeled `From the Hub` in the target's chat; one the session refuses or never confirms goes back to its card. Change the setting only when the user asks: widening it lets the Hub skip cards the user would otherwise see. A host that predates the setting makes `codello hub messages` exit 1 and say to run `codello restart`.
 
