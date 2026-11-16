@@ -15,6 +15,8 @@ Answers to your decisions:
 
 The prompt arrives when the user has answered or dismissed every open decision, when they tap Send answers to send what they have answered so far, or ahead of the next message they type.
 
+An answer the user typed in their own words may be a question or an objection rather than a choice: answer it before you act on that decision.
+
 ## When to use it
 
 Use it for a decision only the user can make that you would otherwise write into your reply and leave for them to answer in prose. Use `codello ask` instead when you must have the answer before you can do anything else in this turn; it waits for the answer and prints it.
