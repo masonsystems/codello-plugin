@@ -1,6 +1,6 @@
 ---
 name: waiting
-description: "Run `codello session-status set waiting -m \"<what they must do>\"` at the end of a turn that leaves something only the user can do: a PR to review or merge, a question or decision, a permission or blocker only they can clear. Clear it with `codello session-status clear`. Also /codello:waiting."
+description: "Run `codello session-status set waiting -m \"<what they must do>\"` at the end of a turn that leaves something only the user can do: a PR to review or merge, a question or decision, findings or a report they have to read, a permission or blocker only they can clear. Clear it with `codello session-status clear`. Also /codello:waiting."
 ---
 
 # Declare that this session is waiting on the user
@@ -25,6 +25,7 @@ Run it silently in the turn that leaves something only the user can do, before y
 
 - A pull request is open and needs their review, approval, or merge.
 - You asked a question, or a decision is theirs to make. Post every decision in one `codello decide --file -` call first (the `decide` skill), with any text being approved in full in its `details`, so the user answers it on their phone, and keep the decisions out of your reply.
+- The result of the task is something they have to read: findings from an investigation, the answer to a question they left you with, a report, a comparison, a plan, a recommendation. Reading it is the part only they can do, so the task is not done until they have. Say what is ready and lead with the headline, such as `Read: uploads fail on iPad because the picker returns no file. Two fixes compared.` A short answer in a live back-and-forth, where the user is plainly reading along, needs no declaration.
 - A permission you cannot grant yourself: a denied command, a credential, an interactive login, an MFA prompt.
 - A blocker only they can clear: an environment you cannot reach, an account you do not have, a change on a system outside your access.
 - You are handing back a **Blocker** or **Decision needed** item.
@@ -48,7 +49,7 @@ You do not need to clear it when the user replies. Their message, typed in the t
 
 ## Never in the same turn as done
 
-`codello done` retires a declared wait before it records its own outcome, so `set waiting` followed by `done` in one turn leaves the session marked done with the wait gone. The two say opposite things: done means nothing is left for the user, waiting means something is. Pick one. The `done` skill's rule applies: an open PR, a question, a decision, or a follow-up means waiting, not done.
+`codello done` retires a declared wait before it records its own outcome, so `set waiting` followed by `done` in one turn leaves the session marked done with the wait gone. The two say opposite things: done means the user can close the session after reading only its `-m` line, waiting means something is left for them. Pick one. The `done` skill's rule applies: an open PR, a question, a decision, a follow-up, or a result they have to read means waiting, not done.
 
 ## Write the message for a lock screen
 

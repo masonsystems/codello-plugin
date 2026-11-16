@@ -208,7 +208,7 @@ has its own skill with the rules for when to run it:
 ```bash
 codello session-status set waiting -m "Review PR #12"   # this turn ends needing the user (skill: waiting)
 codello session-status clear                             # the wait ended without them replying
-codello done -m "Merged the retry fix"                   # finished, nothing left for the user (skill: done)
+codello done -m "Merged the retry fix"                   # finished, user can close it unread (skill: done)
 codello done --failed -m "Staging DB unreachable"        # could not be done (skill: done)
 codello quit                                             # the user said "do X and quit" and X succeeded (skill: quit)
 codello emergency -m "Prod API 500s; rolled back, failing" # harm happening now you cannot contain; any agent (skill: emergency)
