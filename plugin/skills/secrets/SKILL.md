@@ -1,6 +1,6 @@
 ---
 name: secrets
-description: "Ask the user for an API key, token, password, or any other credential you need to finish a task — `codello secret request` — and use it again later in the session with `codello secret get`. Use this INSTEAD of telling the user to paste a key into the chat, put one in a file, or edit .env themselves: they are usually on a phone and cannot edit files, and a key pasted into the conversation is recorded permanently in the transcript, the terminal scrollback, and the logs. Triggers: you encounter a missing ANTHROPIC_API_KEY / OPENAI_API_KEY / GITHUB_TOKEN / AWS credential / database password / .env value, a command fails with 401 or 403 or \"not authenticated\", a setup step needs a credential you do not have, or you are about to write \"please add your key to\" anything."
+description: "Get a credential from the user with `codello secret request` and reuse it with `codello secret get`, instead of asking them to paste a key into chat or edit .env. Use when an API key, token, or password is missing, or a command fails with 401, 403, or \"not authenticated\"."
 ---
 
 # Ask the user for a secret
@@ -22,6 +22,8 @@ codello secret request GITHUB_TOKEN --reason "Opening the release PR"
 ```
 
 The name is what you use to get the value back later, and the user sees it above the field. Use a short identifier such as `GITHUB_TOKEN` or `STRIPE_TEST_KEY`. `--reason` says what it is for.
+
+If the user has to create or regenerate the credential first, put the creation page in `--reason` with the name and scopes already filled in, for example `https://github.com/settings/tokens/new?scopes=read:org&description=release-bot`. Lead with that link, not with steps for editing an existing credential, which can't be pre-filled.
 
 The command blocks until the user answers. It writes an instruction to stderr, and the path of a 0600 file to stdout as its only line:
 
@@ -48,6 +50,14 @@ curl -H "Authorization: Bearer $(codello secret get STRIPE_TEST_KEY)" https://ap
 It refuses with exit 2 when stdout is a terminal, but that protects only a person typing at one. Your Bash tool runs commands with stdout on a pipe, so a bare `codello secret get NAME` from you is not refused: it prints the value into the transcript. Nothing stops that except the rule below.
 
 ## When the value is wrong
+
+Check the value's shape before you use it, without printing it. A pasted label or name instead of the key is a common mistake, and a shape check catches it before a confusing API error does:
+
+```bash
+v="$(codello secret get GITHUB_TOKEN)"; case "$v" in ghp_*|github_pat_*) echo "shape ok, ${#v} chars" ;; *) echo "unexpected shape, ${#v} chars" ;; esac
+```
+
+Check the length, any known prefix, and that it has no spaces. If the shape is wrong, ask again with `--refresh` and say in `--reason` what looked wrong.
 
 If the service rejects the secret as wrong, revoked, or expired, ask again with `--refresh`. That asks the user even though the session holds the name, and replaces the held value when they answer:
 
