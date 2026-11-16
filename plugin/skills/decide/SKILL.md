@@ -57,7 +57,7 @@ Write each option as `Label: one-line description`, so a tap on it makes sense w
 
 When the user picks any number of items that don't exclude each other, such as which checks to add, which files to delete, or which of several fixes to ship, post one multi-select decision instead of one yes/no decision per item. Set `"multiSelect": true` and list the items in `options`, up to 8. Name the items you recommend in `"recommended"`; they start checked and carry the Recommended mark. Every name in `recommended` must match an option exactly. Leave `recommended` out when you recommend none.
 
-Keep each option a short label, because the answer joins every checked one on one line. When the choices exclude each other (Postgres or SQLite, send or hold), keep a single-choice decision with your recommendation first.
+Here each option is a short label, not the `Label: one-line description` form above, because the answer joins every checked one on one line. When the choices exclude each other (Postgres or SQLite, send or hold), keep a single-choice decision with your recommendation first.
 
 ```json
 {
@@ -152,7 +152,7 @@ Both exit 0 when the change is made. Exit 1 changes nothing, and stderr names ea
 
 ## Then declare the wait, and keep the decisions out of your reply
 
-After the `codello decide` call, run `codello session-status set waiting -m "<n> decisions are waiting on you"` before your final reply (the `waiting` skill). Use `set waiting`, not `set blocked`, even when the work pauses until the user answers: the decision cards already tell the user what to do. The decisions are already on the user's phone. Never repeat or list them in your reply: the user would read each one twice and could answer the copy that never reaches you.
+After the `codello decide` call, run `codello session-status set waiting -m "<n> decisions are waiting on you"` before your final reply (the `waiting` skill). Use `set waiting`, not `set blocked`, even when the work pauses until the user answers: the decision cards already tell the user what to do. The one exception is a turn that also hands back a blocker only the user can clear, such as a sign-in; set `blocked` then (the `waiting` skill). The decisions are already on the user's phone. Never repeat or list them in your reply: the user would read each one twice and could answer the copy that never reaches you.
 
 Never run `codello done` in the same turn, even when a task brief says to finish with it. While any decision is unanswered the host refuses `codello done`. Run it after the answers arrive and nothing else is left for the user.
 

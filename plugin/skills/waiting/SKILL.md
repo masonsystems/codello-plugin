@@ -39,7 +39,7 @@ Set `blocked` when your work cannot continue until the user acts:
 Set `waiting` when the user has something to do but your work is not stuck on it:
 
 - A pull request is open and needs their review, approval, or merge. One they have already approved, with the merge left to a process they run later, does not.
-- You asked a question, or a decision is theirs to make. Post every decision in one `codello decide --file -` call first (the `decide` skill), with any text being approved in full in its `draft` (or in `details` on a multi-select decision, which takes no `draft`), so the user answers it on their phone, and keep the decisions out of your reply. A turn that posts decisions ends with `set waiting`.
+- You asked a question, or a decision is theirs to make. Post every decision in one `codello decide --file -` call first (the `decide` skill), with any text being approved in full in its `draft` (or in `details` on a multi-select decision, which takes no `draft`), so the user answers it on their phone, and keep the decisions out of your reply. A turn that posts decisions ends with `set waiting`, or with `set blocked` when it also hands back a blocker (below).
 - The result of the task is something they have to read: findings from an investigation, the answer to a question they left you with, a report, a comparison, a plan, a recommendation. Reading it is the part only they can do, so the task is not done until they have. Say what is ready and lead with the headline, such as `Read: uploads fail on iPad because the picker returns no file. Two fixes compared.` A short answer in a live back-and-forth, where the user is plainly reading along, needs no declaration.
 - You are handing back a **Decision needed** item.
 
@@ -47,7 +47,7 @@ When both apply, set `blocked`: the user needs to know first that work has stopp
 
 Never set it for work you started yourself: CI on your own push, a `Monitor` or background command, a deploy, a subagent. When that work finishes you resume on your own, so the user is not the one you are waiting on, and the row would tell them it is their move while you keep working. Codello already shows a session parked on background work as busy. Set it only once something is left for the user, for example when CI is green and the PR is ready for review.
 
-The same holds for a teammate or a review whose result you are waiting on, even when you already have something to ask the user. When that result can change what you ask them for, hold the `codello decide` cards and the wait until it arrives, and post both in that turn.
+The same holds for a subagent, a teammate, or a review whose result you are waiting on, even when you already have something to ask the user. When that result can change what you ask them for, hold the `codello decide` cards and the wait until it arrives, and post both in that turn.
 
 Never set it, or keep the session open on a timer, for a step of your own more than an hour away, such as a check tomorrow morning. Hand it off as the `done` skill says, then run `codello done`.
 
@@ -71,6 +71,7 @@ A task-mode session was started with `codello spawn --task`, and its system prom
 - A `codello ask` question is waiting for the user. Use it for a question, a credential, or access: `codello ask "<question>"`, adding `--options "A|B"` when the choices are known. It waits up to 10 minutes and prints the answer, so give it a tool timeout of at least 600000 ms.
 - `codello decide` cards are open or answered and not yet delivered. Post every decision in one call (the `decide` skill), run `codello session-status set waiting -m "<what you need>"`, and end your turn; the answers arrive as your next prompt.
 - You declared a wait on someone other than the user, such as a colleague's reply or a vendor, with `codello session-status set waiting -m "<who and what you wait for>"`.
+- Work you started is still running, such as a subagent, a review, or a background shell. End the turn without declaring anything; its result arrives as your next prompt.
 - `codello done` reported the work. When it leaves something for the user, such as a PR to review, put that action in `--next` (the `done` skill).
 
 ## Never in the same turn as done
