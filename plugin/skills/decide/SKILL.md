@@ -131,6 +131,8 @@ Both exit 0 when the change is made. Exit 1 changes nothing, and stderr names ea
 
 After the `codello decide` call, run `codello session-status set waiting -m "<n> decisions are waiting on you"` before your final reply (the `waiting` skill). Use `set waiting`, not `set blocked`, even when the work pauses until the user answers: the decision cards already tell the user what to do. The decisions are already on the user's phone. Never repeat or list them in your reply: the user would read each one twice and could answer the copy that never reaches you.
 
+Never run `codello done` in the same turn, even when a task brief says to finish with it. While any decision is unanswered the host refuses `codello done`. Run it after the answers arrive and nothing else is left for the user.
+
 When a subagent, a teammate, or a review you are waiting on is still running and its result can change what you ask, hold the cards and the wait until that result arrives, then post both in that turn.
 
 ## Reading the result

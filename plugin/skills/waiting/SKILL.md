@@ -75,7 +75,7 @@ A task-mode session was started with `codello spawn --task`, and its system prom
 
 ## Never in the same turn as done
 
-`codello done` retires a declared status before it records its own outcome, so `set blocked` or `set waiting` followed by `done` in one turn leaves the session marked done with the declaration gone. They say opposite things: done means the user can close the session after reading only its `-m` line, blocked and waiting mean something is left for them. Pick one. The `done` skill's rule applies: an open PR, a question, a decision, a follow-up, or a result they have to read means waiting, and work stopped on the user means blocked, not done.
+`codello done` retires a declared status before it records its own outcome, so `set blocked` or `set waiting` followed by `done` in one turn leaves the session marked done with the declaration gone. They say opposite things: done means the user can close the session after reading only its `-m` line, blocked and waiting mean something is left for them. Pick one. The `done` skill's rule applies: an open PR, a question, a decision, a follow-up, or a result they have to read means waiting, and work stopped on the user means blocked, not done. After you post `codello decide` cards, set waiting: the host refuses `codello done` while any card or `codello ask` question is unanswered.
 
 ## Write the message for a lock screen
 
