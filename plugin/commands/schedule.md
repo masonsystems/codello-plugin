@@ -104,9 +104,9 @@ Otherwise the user is describing **what** to do and **when**. Do this:
    - A 5-field cron expression for recurring runs. For example, "every day at 9am" is `0 9 * * *` and "weekdays at 8" is `0 8 * * 1-5`.
    - An ISO date and time for a one-shot. For example, "tomorrow at 3pm" is `2026-06-17T15:00`. Compute the absolute date from today if needed.
 
-6. **Write a self-contained prompt to a temp file.** The scheduled Claude has no memory of this chat, so spell out the full task, the repository or directory context, and what "done" looks like. Never inline the prompt through shell quoting. Write it to a file and pass `--prompt-file`:
+6. **Write a self-contained prompt to a file in your session scratchpad directory.** The scheduled Claude has no memory of this chat, so spell out the full task, the repository or directory context, and what "done" looks like. Pass the file with `--prompt-file` instead of inlining the prompt, because shell quoting mangles quotes and newlines. Claude Code names the scratchpad in your environment as "Scratchpad directory". Use it, not `/tmp` or `$TMPDIR`: its path is the same inside and outside the sandbox, and a name per schedule keeps concurrent sessions apart. If you have no scratchpad directory, write the file with the sandbox off too:
    ```bash
-   cat > /tmp/ctg-schedule-prompt.txt <<'PROMPT'
+   cat > "<scratchpad>/ctg-schedule-<name>.txt" <<'PROMPT'
    <the full, self-contained prompt>
    PROMPT
    ```
@@ -122,7 +122,7 @@ Otherwise the user is describing **what** to do and **when**. Do this:
    codello schedule add --dry-run \
      --name <name> --cwd "<dir>" --at "<cron|ISO>" \
      [--background] \
-     --prompt-file /tmp/ctg-schedule-prompt.txt
+     --prompt-file "<scratchpad>/ctg-schedule-<name>.txt"
    ```
 
 8. **Save it. Do not ask the user to confirm.** If the dry run parsed cleanly, run the real command at once, with the same flags and no `--dry-run`:
@@ -130,7 +130,7 @@ Otherwise the user is describing **what** to do and **when**. Do this:
    codello schedule add \
      --name <name> --cwd "<dir>" --at "<cron|ISO>" \
      [--background] \
-     --prompt-file /tmp/ctg-schedule-prompt.txt
+     --prompt-file "<scratchpad>/ctg-schedule-<name>.txt"
    ```
    Then report the name, the next run in the user's local time zone, the cwd, whether it is **background or interactive**, a one-line summary of the prompt, and where the result shows up. For a background schedule, the result is on the run's row and the **Background runs** page, and in `codello schedule runs`; a failed run sends a push and a bell notification.
 
