@@ -5,7 +5,7 @@ description: "Run `codello session-status set waiting -m \"<what they must do>\"
 
 # Declare that this session is waiting on the user
 
-Codello shows the user a needs-you dot when a turn ends on a question or a permission prompt. It cannot see a wait that you describe in prose, and if anything you started is still running (a `Monitor`, a background `Bash`, a subagent, a dev server) the session reads as busy however plainly your reply says otherwise. On September 18, 2026 that cost five hours of a session waiting silently. The declaration replaces the inference.
+Codello shows the user a needs-you dot when a turn ends on a question or a permission prompt. It cannot see a wait that you describe in prose, and if anything you started is still running (a `Monitor`, a background `Bash`, a dev server) the session reads as busy however plainly your reply says otherwise. On September 18, 2026 that cost five hours of a session waiting silently. The declaration replaces the inference.
 
 ```bash
 codello session-status set waiting -m "PR ready for review: https://github.com/org/repo/pull/123"
@@ -31,6 +31,8 @@ Run it silently in the turn that leaves something only the user can do, before y
 - You are handing back a **Blocker** or **Decision needed** item.
 
 Never set it for work you started yourself: CI on your own push, a `Monitor` or background command, a deploy, a subagent. When that work finishes you resume on your own, so the user is not the one you are waiting on, and the row would tell them it is their move while you keep working. Codello already shows a session parked on background work as busy. Set it only once something is left for the user, for example when CI is green and the PR is ready for review.
+
+The same holds for a teammate or a review whose result you are waiting on, even when you already have something to ask the user. When that result can change what you ask them for, hold the `codello decide` cards and the wait until it arrives, and post both in that turn.
 
 Never set it, or keep the session open on a timer, for a step of your own more than an hour away, such as a check tomorrow morning. Hand it off as the `done` skill says, then run `codello done`.
 
