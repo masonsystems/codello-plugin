@@ -45,7 +45,7 @@ Recommended: Switch to Postgres.
 
 Keep the question that short. Anything longer, such as a multi-step plan or a list of files, goes in `details`; text the user may want to edit goes in `draft`.
 
-Give 1 to 3 `options`, or up to 8 on a multi-select decision (the next section). Put your recommendation first; the card marks the first option Recommended. Leave `options` out when the answer is open-ended. The user can always type their own answer, or skip the decision, so every option is a real answer: never an "Other" option, and never a bare "Recommended" one. A current CLI refuses both.
+Give 1 to 3 `options`. Put your recommendation first; the card marks the first option Recommended. A multi-select decision takes up to 8 and names the ones you recommend in `recommended` instead (the next section). Leave `options` out when the answer is open-ended. The user can always type their own answer, or skip the decision, so every option is a real answer: never an "Other" option, and never a bare "Recommended" one. A current CLI refuses both.
 
 Write each option as `Label: one-line description`, so a tap on it makes sense without the question above:
 
@@ -155,6 +155,8 @@ Both exit 0 when the change is made. Exit 1 changes nothing, and stderr names ea
 After the `codello decide` call, run `codello session-status set waiting -m "<n> decisions are waiting on you"` before your final reply (the `waiting` skill). Use `set waiting`, not `set blocked`, even when the work pauses until the user answers: the decision cards already tell the user what to do. The decisions are already on the user's phone. Never repeat or list them in your reply: the user would read each one twice and could answer the copy that never reaches you.
 
 Never run `codello done` in the same turn, even when a task brief says to finish with it. While any decision is unanswered the host refuses `codello done`. Run it after the answers arrive and nothing else is left for the user.
+
+When a subagent, a teammate, or a review you are waiting on is still running and its result can change what you ask, hold the cards and the wait until that result arrives, then post both in that turn.
 
 ## Reading the result
 
