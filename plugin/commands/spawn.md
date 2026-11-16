@@ -20,8 +20,8 @@ It has **no memory of this conversation**, so each prompt must be fully self-con
 - **Use `/codello:spawn` in task mode** when a task should run unattended to one finished
   result and report back here: see "Task mode" below.
 - **Use team agents / subagents instead** when the subtasks belong to *this* session's
-  work and need to coordinate with it as they go. A spawned session reports back only
-  in task mode, and only once, when it finishes.
+  work and need to coordinate with it as they go. A spawned session reports back on its
+  own only in task mode, and only once, when it finishes.
 
 ## What to do
 
