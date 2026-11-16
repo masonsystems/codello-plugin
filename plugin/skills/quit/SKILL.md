@@ -20,7 +20,7 @@ Report your result to the agent that spawned you and let it decide what the sess
 "Quit" is conditional on the whole task working. Before you arm it, every one of these must be true:
 
 - The task the user named is complete, not partially complete. A PR that is open but failing CI, a reply that bounced, a ticket you could not transition, a deploy that did not verify: none of these succeed.
-- Every gate the task normally carries has run and passed. If the work is a code change, that includes tests, the Codex review, and any repo-mandated checks. The quit does not waive them.
+- Every gate the task normally carries has run and passed. If the work is a code change, that includes tests, any review the repo or the user requires, and any repo-mandated checks. The quit does not waive them.
 - Nothing needs the user. No **Blocker**, no **Decision needed**, no question you would otherwise have asked, and no **Follow-up** they would have to act on.
 - No background work of yours still matters. Quitting kills the process tree, so a `Monitor`, a background `Bash`, or a subagent you are waiting on dies with it. If one still has to finish, you are not done.
 - The user did not also ask a question in the same message. A question wants an answer they will read, so leave the session open.
