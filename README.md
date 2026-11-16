@@ -17,6 +17,11 @@ door to the `codello` CLI:
   the value never enters the transcript, the scrollback, or the logs. The server keeps it in
   memory until the session closes, so the agent asks once and reads it back with
   `codello secret get`.
+- **`codello:message` skill** (no slash command — loads itself when relevant) — sends a
+  message to the agent in another Codello session, on this host or another host on your
+  account, instead of asking you to copy text between sessions by hand. You approve each
+  message on your phone before it arrives, and the skill tells the receiving agent that a
+  message carries no authority of yours.
 - **`/codello:spawn`** — start fresh, titled sessions *now*, one per task, in any project
   directory — driveable from your phone the moment they start.
 - **`/codello:schedule`** — schedule a fresh, pre-seeded Claude Code session to fire later
@@ -41,8 +46,8 @@ door to the `codello` CLI:
   so the session's row shows a green check or a red ✕ and you learn the outcome without
   opening it. It runs only when nothing is left for you in that session.
 - **`codello:waiting` skill** (also `/codello:waiting`) — the agent declares that the session
-  is waiting on you and what for (a PR to review, a question, a permission, a blocker), so the
-  row shows the needs-you dot with that line even while a monitor or background task of the
+  is blocked on you (a sign-in, a permission, a credential, a blocker; shown red) or waiting on
+  you (a PR to review, a question; shown amber) and what for, so the row shows that status and line even while a monitor or background task of the
   agent's keeps the session looking busy. It clears the declaration when the wait ends.
 - **`codello:decide` skill** (no slash command — loads itself when relevant) — the agent posts each decision only you can make with `codello decide`: a one-line ask, a few bullets on why it matters and what each option does, and a recommendation, with up to 3 options, the recommended one first, and any longer material behind a Details toggle. You answer on your phone, and the agent gets every answer back as one prompt once you have answered them all, when you tap Send answers, or ahead of your next message. Needs a `codello` CLI with the `decide` command.
 - **`codello:watch-policy` skill** (no slash command — loads itself when relevant) — the default policy for a session that watches another with `codello watch`. On each of the target's permission prompts it either allows that one call once (reads, the repository's own checks, edits for the task at hand, local commits, and a push of the working branch) or passes it to your phone, and it passes anything it is not sure about. It never denies, never allows a tool for good, and treats the prompt's input as data. Copy it into your own skills directory to change the policy. Needs a `codello` CLI with the `watch` and `permit` commands.
@@ -53,9 +58,13 @@ door to the `codello` CLI:
   blockers or questions. Needs a `codello` CLI with the `emergency` command.
 - **SessionStart hook** — in a Codello session, a few lines of context at session start
   name the commands an agent is expected to run on its own (`done`, `done --failed`, `quit`,
-  `session-status set waiting` / `clear`, `decide`, `secret request`, `emergency`) and point at the skill
+  `session-status set blocked` / `set waiting` / `clear`, `decide`, `secret request`, `message`, `emergency`) and point at the skill
   for each.
   Outside a Codello session the hook prints nothing.
+- **PreToolUse hook** — in a Codello session, an agent's own `codello session-status`,
+  `codello decide`, and `codello done` calls run without a permission prompt, as long as the
+  Bash command is exactly one such call. Anything chained to it still prompts. Needs a `codello`
+  CLI with `codello hook allow-reporting`; an older CLI leaves every call to the normal prompt.
 
 ## Prerequisites
 
@@ -131,6 +140,18 @@ doesn't cover falls back to `codello --help` and the plugin's other skills, and 
 says plainly when something isn't documented instead of guessing. Same ranking caveat as
 `codello:cli`: invoke it once by hand (`Skill: codello:docs`) if it doesn't load on its own.
 
+## Message another session (`codello:message` skill)
+
+A skill, not a command. It loads when an agent is about to ask you to relay text into another session, or when a message from another session arrives:
+
+```bash
+codello message api-server "The /v2/orders response now includes shipped_at. See docs/api/orders.md."
+```
+
+The target is an id prefix or an exact session name, on any host on your account, and it must be running an agent: shells are refused. You see the sender, the target, and the exact text on your phone and tap Send or Discard; nothing is typed into the target until you tap Send. The command returns at once, and `--wait` blocks and exits with one code per ending (0 delivered, 4 discarded, 5 expired, 6 unknown, 7 refused). The delivered text starts with a line naming the sending session and host and the command to reply, with the body quoted as `> `.
+
+The skill teaches when to send one (another session holds the context, and the alternative is a turn that ends asking you to copy text by hand), when not to (its own subagents, a question only you can answer, a secret), and how to treat a message it receives: as text from another agent that carries none of your authority, never as an approval. It needs a Codello CLI that has `codello message`; on an older one the agent says what it wanted to send instead.
+
 ## Spawn
 
 ```
@@ -195,21 +216,27 @@ a one-line summary, a failure sends you a push, and a done session closes itself
 unless you open it or type in it. The same rule as quit applies: an open pull request, a follow-up,
 a question, or a decision means the session ends with an ordinary report instead.
 
-## Say the session is waiting on you
+## Say the session is blocked or waiting on you
 
-An agent that ends a turn on something only you can do runs
-`codello session-status set waiting -m "<what you have to do>"`. Codello infers a session's
+An agent that ends a turn with its work stopped until you act runs
+`codello session-status set blocked -m "<what you have to do>"`, which shows red like a
+permission prompt. An agent that ends a turn on something you may answer runs
+`codello session-status set waiting -m "<what you can do>"`, which shows amber. Codello infers a session's
 state from hooks, and a session with a `Monitor`, a background task, or a dev server still
 running reads as busy no matter what the agent's reply says, so before this the wait was
 invisible until you opened the session. The declaration outranks the inference: the row shows
-the needs-you dot with the agent's line, you get one push carrying it, and nothing the agent
+the red blocked or amber waiting status with the agent's line, you get one push carrying it, and nothing the agent
 does afterward moves it. Your reply retires it, as do dismissing the session from the
-dashboard, `codello session-status clear`, and `codello done`. The skill tells the agent to set it for a PR awaiting review, a question or
-decision, a permission it cannot grant, or a blocker only you can clear, to clear it when the
-wait ends another way, and never to run it in the same turn as `done`.
+dashboard, `codello session-status clear`, and `codello done`. The skill tells the agent to set `blocked` for a sign-in, access or a
+permission it cannot grant, a credential, or a blocker only you can clear, and `waiting` for a
+PR awaiting review, a question or decision, or findings or a report you have to read. It clears the
+declaration when the wait ends another way, and never runs it in the same turn as `done`. When the
+Codello server or CLI is too old for `blocked`, the agent sets `waiting` with the same line.
 
-Cursor sessions cannot declare a status (no Stop hook fires the declaration); Claude Code and
-Codex sessions can.
+Claude Code, Codex, and Cursor sessions can declare a status. A Cursor session needs a
+Codello CLI restarted after [COD-1539](https://linear.app/masonsystems/issue/COD-1539/), and
+its declaration fires when an interactive turn completes; a `cursor-agent --print` run never
+fires it.
 
 ## Raise an emergency
 
@@ -233,23 +260,46 @@ ships in the `codello` CLI ([COD-1655](https://linear.app/masonsystems/issue/COD
 
 The plugin ships a `SessionStart` hook (`hooks/hooks.json`, `scripts/session-start.sh`). Inside
 a Codello session it adds a few lines of context naming the commands the agent is expected to
-run on its own and when: `done` and `done --failed`, `quit`, `session-status set waiting` and
-`clear`, `secret request`, and `emergency`, each pointing at its skill. This is the deterministic layer:
+run on its own and when: `done` and `done --failed`, `quit`, `session-status set blocked`,
+`set waiting`, and `clear`, `secret request`, and `emergency`, each pointing at its skill. This is the deterministic layer:
 skills load when Claude Code decides they are relevant, and on a machine with many skills a
 new one can rank too low to be offered, so the hook makes sure the commands are named even
 when no skill loads. It is a no-op when `CODELLO_SESSION` (or the older `CODETOGO_SESSION`)
 is unset or `codello` is not on `PATH`, so the plugin adds nothing to an unrelated Claude
 session.
 
+## Reporting commands run without a prompt
+
+The plugin also ships a `PreToolUse` hook on Bash (`scripts/allow-reporting.sh`). The plugin
+tells every agent to run `codello session-status`, `codello decide`, and `codello done`, and
+each one only reports to you, yet an allow rule such as `Bash(codello session-status *)` misses
+some of them: Claude Code splits a command at a `;` even inside a quoted `-m` message, so
+`-m "Reboots done; tonight's run starts at 6:15 PM CST."` prompts. The hook asks the `codello`
+CLI (`codello hook allow-reporting`), which allows the call only when the whole command is one
+`session-status`, `decide`, or `done` call: no backtick, no `$` outside single quotes, no
+unquoted `;`, `&`, `|`, `(`, `)`, `<`, or `>`, at most a trailing `2>&1 | tail -N` or `| head -N`, and, for `decide`
+only, one heredoc body. Anything else gets no decision and goes through the normal permission
+flow, and your deny and ask rules still apply. The full rules are in
+[Claude Code hooks](https://github.com/masonsystems/codetogo/blob/main/docs/claude-code-hooks.md)
+in the Codello repository.
+
+The hook does nothing outside a Codello session or when it cannot find `codello`. A `codello`
+CLI older than 1.3.2 has no `hook allow-reporting`; the hook then prints nothing and exits 0,
+so every call prompts as it did before, until the CLI is updated.
+
 ## The Codello bridge mod
 
-`plugin/mods/codello-bridge/` is a separate plugin: a Claude Code mod, which needs Claude Code 2.1.287 or later. You never install it. The Codello host loads it into the sessions it starts, with a second `--plugin-dir`, only when its `modBridge` setting is on (`codello config set modBridge true`; it is off by default) and the installed Claude Code is new enough, so an older Claude Code never sees it. The marketplace does not list it.
+`plugin/hooks/bridge/` is a Claude Code mod inside this plugin, and it needs Claude Code 2.1.287 or later. An older Claude Code loads the rest of the plugin and ignores it. Because it ships with the plugin, it loads in every Claude Code session on the machine, not only the ones Codello starts.
 
 It carries chat sends from the Codello app into the session without typing them into the terminal, and it tells the host when a turn starts and ends, when the conversation compacts, and when a usage window moves. A send that arrives mid-turn is held and delivered once: appended after the next tool call, or submitted when the turn ends; after an interrupt a text send is appended and never starts a turn, while a held slash command is not run and the app shows it as not sent. A held send stays in session state until its delivery has an outcome, so a reload of the mod keeps it; a send whose delivery had started when the mod reloaded is reported unverified and never sent twice. A send runs as a slash command only when it names a command the session has.
 
-The host gives each session its own Unix socket and token through `CODELLO_BRIDGE_SOCKET` and `CODELLO_BRIDGE_TOKEN`. The mod unsets both variables as it starts, so the agent's own commands do not inherit them. The token's boundary is your user account: another process running as you can read it, and so can any other plugin in the session. Outside a Codello session the variables are absent and the mod does nothing. Every hook passes its event on, and a host that is down or refuses a call never fails a turn: the host types the send into the terminal instead. The design and its upgrade path are in [Claude Code's I/O surfaces](https://github.com/masonsystems/codetogo/blob/main/docs/claude-code-io-surfaces.md) in the Codello repository.
+In a session Codello started, the host gives the session its own Unix socket and token through `CODELLO_BRIDGE_SOCKET` and `CODELLO_BRIDGE_TOKEN`. The mod unsets both variables as it starts, so the agent's own commands do not inherit them. The token's boundary is your user account: another process running as you can read it, and so can any other plugin in the session.
 
-Check it with `claude plugin validate plugin/mods/codello-bridge` and `claude plugin test plugin/mods/codello-bridge`.
+In a session Codello did not start, such as one from the Claude Desktop app, a `claude` in a terminal, or the editor extension, there are no such variables, so the mod looks for a running host itself. It posts the session's id and working directory to the host's discovery socket, `bridge/ambient.sock` under the Codello config directory (`CODELLO_CONFIG_DIR`, else `~/.codetogo`), and the host answers with a socket and token for that session alone. With no host on the machine that one call fails at once, because the socket file does not exist, and the mod does nothing else; it asks again at the start of each turn, so a host you start later picks the session up. A hello that gets no answer within 1.5 seconds counts as no host, so a wedged host cannot hold up a turn. If the host restarts, the mod notices when its polls fail and, once their backoff tops out after about 13 seconds, asks the discovery socket again. `/clear` starts a new conversation under a new session id, so the mod lets its link go and asks again at the next turn start.
+
+Every hook passes its event on, and a host that is down or refuses a call never fails a turn: a Codello host types the send into the terminal instead. The design and its upgrade path are in [Claude Code's I/O surfaces](https://github.com/masonsystems/codetogo/blob/main/docs/claude-code-io-surfaces.md) in the Codello repository.
+
+Check it with `claude plugin validate plugin` and `claude plugin test plugin`.
 
 ## Handoff, resume & compact
 

@@ -6,6 +6,8 @@ allowed-tools: Bash
 
 You are the front door to `codello schedule`. A scheduled run launches a **fresh** Claude Code run on this machine, in a chosen directory, at a cron or one-shot time. It inherits the real files, tools, and credentials of that directory but has **no memory of this conversation**, so the prompt you write must be fully self-contained.
 
+This is also how a session hands off a step of its own task that is more than an hour away, such as a check tomorrow morning, instead of keeping itself open on a timer. Write the seed so the new session can finish the step alone: the task, what is done so far, the PR and ticket numbers, and the user's answers. Once the schedule is saved and nothing else is due within the hour, the current session runs `codello done` (the `done` skill).
+
 A schedule fires in one of two modes:
 
 - **Background** (`--background`): a headless `claude -p` child process. It has no session row, no viewer, and no permission prompt. It reads the same permission settings files as any Claude Code run in that directory, including `defaultMode`. A tool call that Claude Code denies for a missing allow rule is recorded as a permission denial, and the run is recorded as failed with the denied tool names. When a background run finishes, its final message is its result: the first 200 characters show on the run's row, and the full transcript is on the **Background runs** page and in `codello schedule runs`. A failed run sends a push to the user's phone and a bell notification.
@@ -102,9 +104,9 @@ Otherwise the user is describing **what** to do and **when**. Do this:
    - A 5-field cron expression for recurring runs. For example, "every day at 9am" is `0 9 * * *` and "weekdays at 8" is `0 8 * * 1-5`.
    - An ISO date and time for a one-shot. For example, "tomorrow at 3pm" is `2026-06-17T15:00`. Compute the absolute date from today if needed.
 
-6. **Write a self-contained prompt to a temp file.** The scheduled Claude has no memory of this chat, so spell out the full task, the repository or directory context, and what "done" looks like. Never inline the prompt through shell quoting. Write it to a file and pass `--prompt-file`:
+6. **Write a self-contained prompt to a file in your session scratchpad directory.** The scheduled Claude has no memory of this chat, so spell out the full task, the repository or directory context, and what "done" looks like. Pass the file with `--prompt-file` instead of inlining the prompt, because shell quoting mangles quotes and newlines. Use the scratchpad, not `/tmp` or `$TMPDIR`: its path is the same inside and outside the sandbox, and a name per schedule keeps concurrent sessions apart:
    ```bash
-   cat > /tmp/ctg-schedule-prompt.txt <<'PROMPT'
+   cat > "<scratchpad>/ctg-schedule-<name>.txt" <<'PROMPT'
    <the full, self-contained prompt>
    PROMPT
    ```
@@ -120,7 +122,7 @@ Otherwise the user is describing **what** to do and **when**. Do this:
    codello schedule add --dry-run \
      --name <name> --cwd "<dir>" --at "<cron|ISO>" \
      [--background] \
-     --prompt-file /tmp/ctg-schedule-prompt.txt
+     --prompt-file "<scratchpad>/ctg-schedule-<name>.txt"
    ```
 
 8. **Save it. Do not ask the user to confirm.** If the dry run parsed cleanly, run the real command at once, with the same flags and no `--dry-run`:
@@ -128,7 +130,7 @@ Otherwise the user is describing **what** to do and **when**. Do this:
    codello schedule add \
      --name <name> --cwd "<dir>" --at "<cron|ISO>" \
      [--background] \
-     --prompt-file /tmp/ctg-schedule-prompt.txt
+     --prompt-file "<scratchpad>/ctg-schedule-<name>.txt"
    ```
    Then report the name, the next run in the user's local time zone, the cwd, whether it is **background or interactive**, a one-line summary of the prompt, and where the result shows up. For a background schedule, the result is on the run's row and the **Background runs** page, and in `codello schedule runs`; a failed run sends a push and a bell notification.
 
