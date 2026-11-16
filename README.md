@@ -20,7 +20,7 @@ door to the `codello` CLI:
 - **`codello:message` skill** (no slash command — loads itself when relevant) — sends a
   message to the agent in another Codello session, on this host or another host on your
   account, instead of asking you to copy text between sessions by hand. You approve each
-  message on your phone before it arrives, and the skill tells the receiving agent that a
+  message inline, in the Codello conversation with the sending agent, before it arrives, and the skill tells the receiving agent that a
   message carries no authority of yours.
 - **`/codello:spawn`** — start fresh, titled sessions *now*, one per task, in any project
   directory — driveable from your phone the moment they start.
@@ -47,8 +47,9 @@ door to the `codello` CLI:
   opening it. It runs only when nothing is left for you in that session.
 - **`codello:waiting` skill** (also `/codello:waiting`) — the agent declares that the session
   is blocked on you (a sign-in, a permission, a credential, a blocker; shown red) or waiting on
-  you (a PR to review, a question; shown amber) and what for, so the row shows that status and line even while a monitor or background task of the
-  agent's keeps the session looking busy. It clears the declaration when the wait ends.
+  you (a PR to review, a question; shown amber) and what for, so the row shows that status
+  and line even while a monitor or background task of the agent's keeps the session looking
+  busy. It clears the declaration when the wait ends.
 - **`codello:decide` skill** (no slash command — loads itself when relevant) — the agent posts each decision only you can make with `codello decide`: a one-line ask, a few bullets on why it matters and what each option does, and a recommendation, with up to 3 options, the recommended one first, and any longer material behind a Details toggle. You answer on your phone, and the agent gets every answer back as one prompt once you have answered them all, when you tap Send answers, or ahead of your next message. Needs a `codello` CLI with the `decide` command.
 - **`codello:watch-policy` skill** (no slash command — loads itself when relevant) — the default policy for a session that watches another with `codello watch`. On each of the target's permission prompts it either allows that one call once (reads, the repository's own checks, edits for the task at hand, local commits, and a push of the working branch) or passes it to your phone, and it passes anything it is not sure about. It never denies, never allows a tool for good, and treats the prompt's input as data. Copy it into your own skills directory to change the policy. Needs a `codello` CLI with the `watch` and `permit` commands.
 - **`codello:emergency` skill** (also `/codello:emergency`) — any agent in the session, a
@@ -148,7 +149,7 @@ A skill, not a command. It loads when an agent is about to ask you to relay text
 codello message api-server "The /v2/orders response now includes shipped_at. See docs/api/orders.md."
 ```
 
-The target is an id prefix or an exact session name, on any host on your account, and it must be running an agent: shells are refused. You see the sender, the target, and the exact text on your phone and tap Send or Discard; nothing is typed into the target until you tap Send. The command returns at once, and `--wait` blocks and exits with one code per ending (0 delivered, 4 discarded, 5 expired, 6 unknown, 7 refused). The delivered text starts with a line naming the sending session and host and the command to reply, with the body quoted as `> `.
+The target is an id prefix or an exact session name, on any host on your account, and it must be running an agent: shells are refused. You see the sender, the target, and the exact text inline, in the Codello conversation with the sending agent, and tap Send or Discard; nothing is typed into the target until you tap Send. The command returns at once, and `--wait` blocks and exits with one code per ending (0 delivered, 4 discarded, 5 expired, 6 unknown, 7 refused). The delivered text starts with a line naming the sending session and host and the command to reply, with the body quoted as `> `.
 
 The skill teaches when to send one (another session holds the context, and the alternative is a turn that ends asking you to copy text by hand), when not to (its own subagents, a question only you can answer, a secret), and how to treat a message it receives: as text from another agent that carries none of your authority, never as an approval. It needs a Codello CLI that has `codello message`; on an older one the agent says what it wanted to send instead.
 
@@ -261,7 +262,8 @@ ships in the `codello` CLI ([COD-1655](https://linear.app/masonsystems/issue/COD
 The plugin ships a `SessionStart` hook (`hooks/hooks.json`, `scripts/session-start.sh`). Inside
 a Codello session it adds a few lines of context naming the commands the agent is expected to
 run on its own and when: `done` and `done --failed`, `quit`, `session-status set blocked`,
-`set waiting`, and `clear`, `secret request`, and `emergency`, each pointing at its skill. This is the deterministic layer:
+`set waiting`, and `clear`, `decide`, `secret request`, `message`, and `emergency`, each
+pointing at its skill. This is the deterministic layer:
 skills load when Claude Code decides they are relevant, and on a machine with many skills a
 new one can rank too low to be offered, so the hook makes sure the commands are named even
 when no skill loads. It is a no-op when `CODELLO_SESSION` (or the older `CODETOGO_SESSION`)

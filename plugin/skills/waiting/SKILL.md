@@ -47,7 +47,7 @@ When both apply, set `blocked`: the user needs to know first that work has stopp
 
 Never set it for work you started yourself: CI on your own push, a `Monitor` or background command, a deploy, a subagent. When that work finishes you resume on your own, so the user is not the one you are waiting on, and the row would tell them it is their move while you keep working. Codello already shows a session parked on background work as busy. Set it only once something is left for the user, for example when CI is green and the PR is ready for review.
 
-Never set it while a subagent, a teammate, or a review whose result you are waiting on is still running, even when you already have something to ask the user. That result can change what you ask them for, so declare in the turn it arrives.
+The same holds for a teammate or a review whose result you are waiting on, even when you already have something to ask the user. When that result can change what you ask them for, hold the `codello decide` cards and the wait until it arrives, and post both in that turn.
 
 Never set it, or keep the session open on a timer, for a step of your own more than an hour away, such as a check tomorrow morning. Hand it off as the `done` skill says, then run `codello done`.
 
@@ -64,12 +64,14 @@ Run `codello session-status clear` when the wait ends without the user typing in
 
 You do not need to clear it when the user replies. Their message, typed in the terminal or sent from the phone, retires the declaration on its own, and so do `codello done` and the user dismissing the session from the dashboard. If the next user message arrives and you still need something, declare again in that turn.
 
-## Not in a task-mode session
+## In a task-mode session
 
-A task-mode session (started with `codello spawn --task`; its system prompt says so) does not declare waits. A task's turn may end only with a `codello ask` waiting for the user or with `codello done`; any other turn end, a declared wait included, is sent back to you to continue.
+A task-mode session was started with `codello spawn --task`, and its system prompt says so. Nobody reads its replies, so a turn may end in only these ways; any other turn end is sent back to you to continue:
 
-- To ask a question, or for a decision, a credential, or access, run `codello ask "<question>"`, adding `--options "A|B"` when the choices are known. It waits up to 10 minutes and prints the answer, so give it a tool timeout of at least 600000 ms.
-- When the work is finished but leaves something for the user, such as a PR to review, run `codello done` with that action in `--next` (the `done` skill).
+- A `codello ask` question is waiting for the user. Use it for a question, a credential, or access: `codello ask "<question>"`, adding `--options "A|B"` when the choices are known. It waits up to 10 minutes and prints the answer, so give it a tool timeout of at least 600000 ms.
+- `codello decide` cards are open or answered and not yet delivered. Post every decision in one call (the `decide` skill), run `codello session-status set waiting -m "<what you need>"`, and end your turn; the answers arrive as your next prompt.
+- You declared a wait on someone other than the user, such as a colleague's reply or a vendor, with `codello session-status set waiting -m "<who and what you wait for>"`.
+- `codello done` reported the work. When it leaves something for the user, such as a PR to review, put that action in `--next` (the `done` skill).
 
 ## Never in the same turn as done
 

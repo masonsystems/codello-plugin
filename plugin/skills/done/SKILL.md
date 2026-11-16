@@ -72,7 +72,7 @@ A task-mode session was started with `codello spawn --task`, and its system prom
 codello done -m "Fixed the race in the upload test" --tests "npm test: all passed" --next "Review and merge the PR" --link "https://github.com/org/repo/pull/12"
 ```
 
-The report shows as a card on the task's session, sends the user a push, and is typed into the chat session that started the task, if there is one. A turn that ends with no `codello done` and no `codello ask` waiting is sent back to you to continue. Ask questions with `codello ask` (see `codello ask --help`), never in your reply.
+The report shows as a card on the task's session, sends the user a push, and is typed into the chat session that started the task, if there is one. A turn that ends with no `codello done`, no `codello ask` waiting, no open `codello decide` card, and no declared wait is sent back to you to continue; the `waiting` skill lists each way a task's turn may end. Never ask in your reply: ask with `codello ask` (see `codello ask --help`), or post `codello decide` cards and set waiting.
 
 ## Failed means you could not do it
 
