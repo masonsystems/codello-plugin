@@ -37,6 +37,17 @@ Do **not** run `codello done` when any of these is true:
 
 In each of those cases, end the turn normally and say plainly what is pending. The ordinary "needs you" indicator is the right signal, and it is the one the user acts on. Marking such a session done is worse than saying nothing: it tells them there is nothing to come back for, and the session removes itself a day later.
 
+Before you run `codello done`, stop any wake-up you scheduled for this task: `ScheduleWakeup` with `stop: true`, `CronDelete` for a cron job you made, and `codello timer cancel <id>` for a timer you set on this session. A fallback wake-up left running fires after the report and restarts finished work.
+
+## A step more than an hour away does not keep the session open
+
+Never keep a session open, or set a timer on it, for a step more than an hour away, such as a check tomorrow morning or a change in tonight's maintenance window. A session that waits hours sits on the user's list with nothing to do. Hand the step off instead, then run `codello done` once nothing else is due within the hour and no question or decision is open:
+
+- **Schedule a fresh session for it** with `/codello:schedule`, which picks background or interactive and checks the run's permissions. The new session has no memory of this one, so the seed carries everything it needs: the task, what is done so far, the PR and ticket numbers, and the user's answers.
+- **Or, when another agent or session started this one and acts on its report**, put the time and the step in the `-m` summary, such as `Later: 9:00 AM tomorrow: confirm the nightly report ran with the fix`, and let it schedule the step. When a person started this session, schedule the step yourself: a line in the summary sends them no push.
+
+A step handed off either way is not unfinished work or a follow-up under the list above. Cancel any timer or wake-up you set for it before you run `codello done`.
+
 ## Failed means you could not do it
 
 Use `--failed` when the task cannot be completed as asked — a dependency that does not exist, an environment you cannot reach, an approach that turned out to be impossible. A failed session sends the user a push, because they have been waiting on work that is not coming.
