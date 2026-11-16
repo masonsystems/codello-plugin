@@ -36,7 +36,7 @@ Do **not** run `codello done` when any of these is true:
 - You want them to check, confirm, or look at something.
 - Part of the work is unfinished, deferred, or blocked, and the next step is the user's.
 
-Work of your own that is still running is not a reason to declare a wait: keep working, and run `codello done` when it finishes. In each of the cases above, declare the wait with `codello session-status set waiting -m "<what the user has to do or read>"` (the `waiting` skill, `/codello:waiting`), end the turn, and say plainly in the reply what is pending. Marking such a session done is worse than saying nothing: it tells them there is nothing to come back for, and the session removes itself a day later.
+Work of your own that is still running is not a reason to declare a wait: keep working, and run `codello done` when it finishes. In each of the cases above, declare the wait with `codello session-status set waiting -m "<what the user has to do or read>"`, or with `set blocked` when your work cannot continue until the user acts (the `waiting` skill, `/codello:waiting`), end the turn, and say plainly in the reply what is pending. Marking such a session done is worse than saying nothing: it tells them there is nothing to come back for, and the session removes itself a day later.
 
 The same request can end either way. What decides it is what the user still has to take in:
 
@@ -75,7 +75,7 @@ The report shows as a card on the task's session, sends the user a push, and is 
 
 Use `--failed` when the task cannot be completed as asked — a dependency that does not exist, an environment you cannot reach, an approach that turned out to be impossible. A failed session sends the user a push, because they have been waiting on work that is not coming.
 
-Do not use `--failed` for work you merely have not finished yet, or for a task that is blocked on the user. Blocked is not failed: leave the session waiting and say what you need, and declare the wait with `codello session-status set waiting -m "<what you need>"` (the `waiting` skill, `/codello:waiting`) so the session row shows it even while a background task of yours keeps the session looking busy. Never run `done` and `set waiting` in the same turn: `done` retires the declaration.
+Do not use `--failed` for work you merely have not finished yet, or for a task that is blocked on the user. Blocked is not failed: leave the session open and say what you need, and declare it with `codello session-status set blocked -m "<what you need>"` (the `waiting` skill, `/codello:waiting`) so the session row shows it even while a background task of yours keeps the session looking busy. Never run `done` and `set blocked` or `set waiting` in the same turn: `done` retires the declaration.
 
 ## What each outcome does
 
