@@ -1,6 +1,6 @@
 ---
 name: quit
-description: "End this Codello session when the task you were given succeeds, so the user never has to come back to it — `codello quit`. Use when the user's instruction ends with a quit clause: \"reply and quit\", \"ship it and quit\", \"close the ticket then quit\", \"do X and then close this session\", \"quit when you're done\", \"I don't need to hear back\", \"just do it and go away\". Also /codello:quit. Quit ONLY on success: if anything failed, was skipped, or needs a decision from the user, finish with a normal report instead and leave the session open."
+description: "Run `codello quit` to end this session once the task succeeds, when the user's instruction ends with a quit clause such as \"reply and quit\" or \"quit when you're done\". Quit only on success; otherwise report and leave the session open. Also /codello:quit."
 ---
 
 # Quit the session when the task succeeds

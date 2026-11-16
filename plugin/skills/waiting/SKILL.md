@@ -1,17 +1,17 @@
 ---
 name: waiting
-description: "Tell Codello that this session is waiting on the user — `codello session-status set waiting -m \"<what they have to do>\"`, and `codello session-status clear` when the wait ends. Run set at the end of any turn that leaves something only the user can do: a pull request is up and needs their review or merge, you asked a question or a decision is theirs, a permission or credential you cannot grant yourself, a blocker only they can clear. Codello infers state from hooks and reads a session with a Monitor, a background task, or a dev server still running as busy, so without the declaration the user is never told. Also /codello:waiting. Triggers: you are about to end a turn with a Blocker, a Decision needed, a question, a PR URL for review, or \"waiting on you\" in your reply."
+description: "Run `codello session-status set waiting -m \"<what they must do>\"` at the end of a turn that leaves something only the user can do: a PR to review or merge, a question or decision, findings or a report they have to read, a permission or blocker only they can clear. Clear it with `codello session-status clear`. Also /codello:waiting."
 ---
 
 # Declare that this session is waiting on the user
 
-Codello shows the user a needs-you dot when a turn ends on a question or a permission prompt. It cannot see a wait that you describe in prose, and if anything you started is still running (a `Monitor`, a background `Bash`, a subagent, a dev server) the session reads as busy however plainly your reply says otherwise. On September 18, 2026 that cost five hours of a session waiting silently. The declaration replaces the inference.
+Codello shows the user a needs-you dot when a turn ends on a question or a permission prompt. It cannot see a wait that you describe in prose, and if anything you started is still running (a `Monitor`, a background `Bash`, a dev server) the session reads as busy however plainly your reply says otherwise. On September 18, 2026 that cost five hours of a session waiting silently. The declaration replaces the inference.
 
 ```bash
 codello session-status set waiting -m "PR ready for review: https://github.com/org/repo/pull/123"
 ```
 
-The command arms the declaration and returns at once. It fires when the current turn ends, exactly as `codello done` does: the session row shows the needs-you dot with your `-m` line, and one push goes out carrying the same line. Nothing you do afterward moves it, not a watcher firing, not the turn that watcher starts.
+The command arms the declaration and returns at once. It fires when the current turn ends, exactly as `codello done` does: the session row shows the needs-you dot with your `-m` line, and one push goes out carrying the same line. A watcher firing does not retire it. While a turn that watcher starts runs, the row shows you working, and the wait comes back with no second push when that turn ends.
 
 ## Only the session's lead agent runs this
 
@@ -24,10 +24,17 @@ Report your result to the agent that spawned you and let it decide what the sess
 Run it silently in the turn that leaves something only the user can do, before you write the final reply. Never mention the command or the status in the reply: "I've marked this session as waiting on your answer" tells the user nothing they need. Set it when:
 
 - A pull request is open and needs their review, approval, or merge.
-- You asked a question, or a decision is theirs to make.
+- You asked a question, or a decision is theirs to make. Post every decision in one `codello decide --file -` call first (the `decide` skill), with any text being approved in full in its `details`, so the user answers it on their phone, and keep the decisions out of your reply.
+- The result of the task is something they have to read: findings from an investigation, the answer to a question they left you with, a report, a comparison, a plan, a recommendation. Reading it is the part only they can do, so the task is not done until they have. Say what is ready and lead with the headline, such as `Read: uploads fail on iPad because the picker returns no file. Two fixes compared.` A short answer in a live back-and-forth, where the user is plainly reading along, needs no declaration.
 - A permission you cannot grant yourself: a denied command, a credential, an interactive login, an MFA prompt.
 - A blocker only they can clear: an environment you cannot reach, an account you do not have, a change on a system outside your access.
 - You are handing back a **Blocker** or **Decision needed** item.
+
+Never set it for work you started yourself: CI on your own push, a `Monitor` or background command, a deploy, a subagent. When that work finishes you resume on your own, so the user is not the one you are waiting on, and the row would tell them it is their move while you keep working. Codello already shows a session parked on background work as busy. Set it only once something is left for the user, for example when CI is green and the PR is ready for review.
+
+Never set it while a subagent, a teammate, or a review whose result you are waiting on is still running, even when you already have something to ask the user. That result can change what you ask them for, so declare in the turn it arrives.
+
+Never set it, or keep the session open on a timer, for a step of your own more than an hour away, such as a check tomorrow morning. Hand it off as the `done` skill says, then run `codello done`.
 
 One declaration per wait. A second `set` replaces the line on the row and sends another push, so declare once and declare again only when what the user has to do has changed, or when a declaration was dropped.
 
@@ -38,13 +45,13 @@ The declaration fires at the end of the turn. If the user types before the turn 
 Run `codello session-status clear` when the wait ends without the user typing in the session:
 
 - The thing you were waiting for arrived another way: the PR got merged, CI finished, the blocker went away, a background task delivered what you needed.
-- You are about to keep working on your own after all.
+- You are about to keep working on your own after all. Clear it before your first tool call in that turn, not at its end.
 
 You do not need to clear it when the user replies. Their message, typed in the terminal or sent from the phone, retires the declaration on its own, and so do `codello done` and the user dismissing the session from the dashboard. If the next user message arrives and you still need something, declare again in that turn.
 
 ## Never in the same turn as done
 
-`codello done` retires a declared wait before it records its own outcome, so `set waiting` followed by `done` in one turn leaves the session marked done with the wait gone. The two say opposite things: done means nothing is left for the user, waiting means something is. Pick one. The `done` skill's rule applies: an open PR, a question, a decision, or a follow-up means waiting, not done.
+`codello done` retires a declared wait before it records its own outcome, so `set waiting` followed by `done` in one turn leaves the session marked done with the wait gone. The two say opposite things: done means the user can close the session after reading only its `-m` line, waiting means something is left for them. Pick one. The `done` skill's rule applies: an open PR, a question, a decision, a follow-up, or a result they have to read means waiting, not done.
 
 ## Write the message for a lock screen
 
@@ -75,7 +82,7 @@ Nothing is armed until the `set` line prints. If the command prints anything els
 
 - `Not in a Codello session`: Codello did not spawn this PTY. Only a `codello claude` session, the web "new session" button, or a scheduled session can declare a status.
 - `Codello is not running on this host` (older CLIs print `Server not running`): Codello is down on this host, so there is nothing to record the declaration.
-- `A cursor session cannot declare a status`: the declaration fires on a Stop hook, and Cursor has none. Claude Code and Codex sessions can declare; a Cursor session states the wait in its reply instead.
+- `A cursor session cannot declare a status`: the host predates Cursor support, which needs a Codello CLI restarted after [COD-1539](https://linear.app/masonsystems/issue/COD-1539/). State the wait in your reply instead. On a current host a Cursor session declares like Claude Code and Codex, and the declaration fires when an interactive turn completes. A `cursor-agent --print` run never fires it, so state the wait in your reply there too.
 
 ## Options
 
