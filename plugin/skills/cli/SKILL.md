@@ -213,7 +213,7 @@ codello done --failed -m "Staging DB unreachable"        # could not be done (sk
 codello quit                                             # the user said "do X and quit" and X succeeded (skill: quit)
 codello emergency -m "Prod API 500s; rolled back, failing" # harm happening now you cannot contain; any agent (skill: emergency)
 codello decide --file - <<'JSON'  # every decision only the user can make, in one call; answers return as one prompt (skill: decide)
-[{"question": "<what, why, recommendation>", "options": ["<recommended>", "<alternative>"], "details": "<the full text being approved>"}]
+[{"question": "<what, why, recommendation>", "options": ["<recommended>", "<alternative>"], "draft": "<text the user approves and may edit>"}]
 JSON
 codello decide "<what, why, recommendation>" --options "<recommended>|<alternative>" --details "<markdown>"  # one decision
 codello watch <session>                                  # ask the user to let this session decide another's routine prompts (skill: watch-policy)
@@ -242,6 +242,20 @@ Related, and covered by this plugin's own slash commands rather than raw CLI: **
 session later), **`/codello:copy`**, **`/codello:handoff`** · **`/codello:resume`** ·
 **`/codello:compact`** · **`/codello:fresh`** · **`/codello:continue`**. Prefer those over
 hand-rolling `codello spawn` / `schedule add` / `history`.
+
+## When this session is the Hub
+
+The Hub is the one session on a host that the user registered with `codello hub set`; the host wakes it with events from the other sessions. `codello hub status` shows the registration and its settings. The Hub's `codello message` to a session on the same host skips the user's approval card when the Hub's message setting covers that session:
+
+```bash
+codello hub messages tasks   # the default: the Hub's own tasks the user has not taken over
+codello hub messages all     # any live session on this host, once the user approves it on a device
+codello hub messages ask     # none: every message from the Hub waits for its card
+```
+
+`tasks` and `ask` apply at once. `all` changes nothing until the user approves it: the command shows the user a card on their device and waits up to 10 minutes. It exits 0 only when the user approves; when they deny it or don't answer, it exits 1 and the setting stays as it was. Run it in the foreground, and don't run it again after a denial unless the user asks. A new Hub, including one moved with `codello hub set --replace`, starts at `tasks` even when the old Hub was at `all`.
+
+A message to another host always waits for its card. A message the setting covers arrives labeled `From the Hub` in the target's chat; one the session refuses or never confirms goes back to its card. Change the setting only when the user asks: widening it lets the Hub skip cards the user would otherwise see. A host that predates the setting makes `codello hub messages` exit 1 and say to run `codello restart`.
 
 ## Older / dead sessions
 
