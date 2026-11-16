@@ -38,7 +38,7 @@ Failed Approaches**:
 **Session**: cc/<id>   ← omit this line if $CLAUDE_CODE_SESSION_ID was empty
 
 > Need context this handoff doesn't hold? The full prior session is at the Session id.
-> Its transcript is `~/.claude/projects/*/<id>.jsonl`; read the end of it with a bounded read (`tail -c 400000`), never the whole file.
+> Its transcript is `~/.claude/projects/*/<id>.jsonl`, where `<id>` is the Session value without `cc/`. Read it with a bounded read, such as `tail -c 40000` for the end or `grep` for a term, never the whole file.
 > Don't guess at lost context — pull it.
 
 ## Goal
