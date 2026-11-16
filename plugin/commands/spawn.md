@@ -101,7 +101,7 @@ holding a conversation, for example when the user handed you several independent
 cd "<dir>" && codello spawn --task -n "<title>" --prompt-file "<scratchpad>/ctg-spawn-<slug>.txt" claude
 ```
 
-A task gets rules on its system prompt: ask the user only with `codello ask`, and
+A task gets rules on its system prompt: ask the user only with `codello ask` or `codello decide`, and
 finish with `codello done`, whose report (summary, tests, next action, link) shows as a
 card on the task, pushes, and is typed into **this** session as a message from the
 task. A turn the task ends any other way is sent back to it, so it never sits waiting

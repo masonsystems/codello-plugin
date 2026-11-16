@@ -133,6 +133,8 @@ After the `codello decide` call, run `codello session-status set waiting -m "<n>
 
 Never run `codello done` in the same turn, even when a task brief says to finish with it. While any decision is unanswered the host refuses `codello done`. Run it after the answers arrive and nothing else is left for the user.
 
+When a subagent, a teammate, or a review you are waiting on is still running and its result can change what you ask, hold the cards and the wait until that result arrives, then post both in that turn.
+
 ## Reading the result
 
 Run the command with `dangerouslyDisableSandbox: true`. The CLI talks to the local server, which a sandboxed command cannot reach.
