@@ -104,7 +104,8 @@ cd "<dir>" && codello spawn --task -n "<title>" --prompt-file "<scratchpad>/ctg-
 A task gets rules on its system prompt: ask the user only with `codello ask` or `codello decide`, and
 finish with `codello done`, whose report (summary, tests, next action, link) shows as a
 card on the task, pushes, and is typed into **this** session as a message from the
-task. A turn the task ends any other way is sent back to it, so it never sits waiting
+task. A turn may also end on a declared wait or on background work the task started;
+a turn the task ends any other way is sent back to it, so it never sits waiting
 on prose nobody reads. Only `claude` and `codex` can run as tasks.
 
 - Check the CLI once: `codello spawn --help | grep -c -- --task` prints 1 or more when

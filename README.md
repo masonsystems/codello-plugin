@@ -20,8 +20,8 @@ door to the `codello` CLI:
 - **`codello:message` skill** (no slash command — loads itself when relevant) — sends a
   message to the agent in another Codello session, on this host or another host on your
   account, instead of asking you to copy text between sessions by hand. You approve each
-  message inline, in the Codello conversation with the sending agent, before it arrives, and the skill tells the receiving agent that a
-  message carries no authority of yours.
+  message inline, in the Codello conversation with the sending agent, before it arrives,
+  and the skill tells the receiving agent that a message carries no authority of yours.
 - **`/codello:spawn`** — start fresh, titled sessions *now*, one per task, in any project
   directory — driveable from your phone the moment they start.
 - **`/codello:schedule`** — schedule a fresh, pre-seeded Claude Code session to fire later
