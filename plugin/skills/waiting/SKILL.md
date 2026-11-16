@@ -49,6 +49,15 @@ Run `codello session-status clear` when the wait ends without the user typing in
 
 You do not need to clear it when the user replies. Their message, typed in the terminal or sent from the phone, retires the declaration on its own, and so do `codello done` and the user dismissing the session from the dashboard. If the next user message arrives and you still need something, declare again in that turn.
 
+## In a task-mode session
+
+A task-mode session was started with `codello spawn --task`, and its system prompt says so. Nobody reads its replies, so a turn may end in only these ways; any other turn end is sent back to you to continue:
+
+- A `codello ask` question is waiting for the user. Use it for a question, a credential, or access: `codello ask "<question>"`, adding `--options "A|B"` when the choices are known. It waits up to 10 minutes and prints the answer, so give it a tool timeout of at least 600000 ms.
+- `codello decide` cards are open or answered and not yet delivered. Post every decision in one call (the `decide` skill), run `codello session-status set waiting -m "<what you need>"`, and end your turn; the answers arrive as your next prompt.
+- You declared a wait on someone other than the user, such as a colleague's reply or a vendor, with `codello session-status set waiting -m "<who and what you wait for>"`.
+- `codello done` reported the work. When it leaves something for the user, such as a PR to review, put that action in `--next` (the `done` skill).
+
 ## Never in the same turn as done
 
 `codello done` retires a declared wait before it records its own outcome, so `set waiting` followed by `done` in one turn leaves the session marked done with the wait gone. The two say opposite things: done means the user can close the session after reading only its `-m` line, waiting means something is left for them. Pick one. The `done` skill's rule applies: an open PR, a question, a decision, a follow-up, or a result they have to read means waiting, not done.
