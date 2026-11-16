@@ -46,7 +46,7 @@ Then write a one- or two-line final reply naming what was done and where it live
 Nothing is armed until that line prints. If the command prints anything else, report exactly what it said and end the turn normally without quitting:
 
 - `Not in a Codello session`: Codello did not spawn this PTY. Only a `codello claude` session, the web "new session" button, or a scheduled session can quit itself; a bare `claude` that Codello merely sees via hooks cannot.
-- `Server not running`: the Codello server is down, so there is nothing to close the session. Finish normally.
+- `Codello is not running on this host` (older CLIs print `Server not running`): Codello is down on this host, so there is nothing to close the session. Finish normally.
 
 ## What the user sees
 
