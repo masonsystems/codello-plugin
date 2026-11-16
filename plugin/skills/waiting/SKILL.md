@@ -38,7 +38,7 @@ Set `blocked` when your work cannot continue until the user acts:
 
 Set `waiting` when the user has something to do but your work is not stuck on it:
 
-- A pull request is open and needs their review, approval, or merge.
+- A pull request is open and needs their review, approval, or merge. One they have already approved, with the merge left to a process they run later, does not.
 - You asked a question, or a decision is theirs to make. Post every decision in one `codello decide --file -` call first (the `decide` skill), with any text being approved in full in its `details`, so the user answers it on their phone, and keep the decisions out of your reply. A turn that posts decisions ends with `set waiting`.
 - The result of the task is something they have to read: findings from an investigation, the answer to a question they left you with, a report, a comparison, a plan, a recommendation. Reading it is the part only they can do, so the task is not done until they have. Say what is ready and lead with the headline, such as `Read: uploads fail on iPad because the picker returns no file. Two fixes compared.` A short answer in a live back-and-forth, where the user is plainly reading along, needs no declaration.
 - You are handing back a **Decision needed** item.

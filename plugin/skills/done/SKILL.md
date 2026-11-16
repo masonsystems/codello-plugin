@@ -30,7 +30,7 @@ Before you run `codello done`, ask one question: can the user close this session
 Do **not** run `codello done` when any of these is true:
 
 - The result of the task is something the user has to read: findings from an investigation, the answer to a question they asked, a report, a comparison, a plan, a recommendation. You finished gathering it, but they have not read it, and a done session tells them they do not need to.
-- A pull request is open and waiting for the user to review, approve, or merge it.
+- A pull request is open and waiting for the user to review, approve, or merge it. A pull request the user has already approved, where the merge is left to a process they run later (such as a merge queue), no longer waits on them; once you have recorded the approval the project asks for, run `codello done`.
 - There is a follow-up for them: a command to run, a credential to add, a setting to change, a deploy to approve.
 - You asked a question, or a decision is theirs to make.
 - A `codello decide` card or a `codello ask` question is still unanswered.
