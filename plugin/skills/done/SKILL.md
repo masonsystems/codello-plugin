@@ -34,9 +34,9 @@ Do **not** run `codello done` when any of these is true:
 - There is a follow-up for them: a command to run, a credential to add, a setting to change, a deploy to approve.
 - You asked a question, or a decision is theirs to make.
 - You want them to check, confirm, or look at something.
-- Part of the work is unfinished, deferred, or blocked.
+- Part of the work is unfinished, deferred, or blocked, and the next step is the user's.
 
-In each of those cases, declare the wait with `codello session-status set waiting -m "<what the user has to do or read>"` (the `waiting` skill, `/codello:waiting`), end the turn, and say plainly in the reply what is pending. Marking such a session done is worse than saying nothing: it tells them there is nothing to come back for, and the session removes itself a day later.
+Work of your own that is still running is not a reason to declare a wait: keep working, and run `codello done` when it finishes. In each of the cases above, declare the wait with `codello session-status set waiting -m "<what the user has to do or read>"` (the `waiting` skill, `/codello:waiting`), end the turn, and say plainly in the reply what is pending. Marking such a session done is worse than saying nothing: it tells them there is nothing to come back for, and the session removes itself a day later.
 
 The same request can end either way. What decides it is what the user still has to take in:
 
@@ -48,7 +48,7 @@ The same request can end either way. What decides it is what the user still has 
 
 A short answer in a live back-and-forth, where the user is plainly reading along, needs neither command: end the turn normally.
 
-When another agent or session started this one and reads its report, that agent is the reader, not a person: report `codello done` with the result in the report.
+When another agent or session started this one and reads its report, that agent is the reader, not a person: run `codello done` and put the result itself in `-m`, since that report is what goes back to it. The one-line test above does not apply, so `-m` may run as long as the result needs.
 
 Before you run `codello done`, stop any wake-up you scheduled for this task: `ScheduleWakeup` with `stop: true`, `CronDelete` for a cron job you made, and `codello timer cancel <id>` for a timer you set on this session. A fallback wake-up left running fires after the report and restarts finished work.
 
@@ -114,4 +114,4 @@ Nothing is armed until that line prints. If the command prints anything else, re
 
 ## Related
 
-`/codello:quit` ends the session outright at the same boundary, leaving no record of an outcome. Use `/codello:done` when the user should still be able to open the session and read what happened; use `/codello:quit` when the user told you to go away and there is nothing worth coming back to. `/codello:waiting` is for the turns this skill tells you not to run `done` on: it declares that the session needs the user, and what for.
+`/codello:quit` ends the session outright at the same boundary, leaving no record of an outcome. Use `/codello:done` when the `-m` line tells the user everything they need, so they can close the session unread; use `/codello:quit` when the user told you to go away and there is nothing worth coming back to. `/codello:waiting` is for the turns this skill tells you not to run `done` on: it declares that the session needs the user, and what for.
