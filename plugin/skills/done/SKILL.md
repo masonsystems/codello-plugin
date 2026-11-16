@@ -1,6 +1,6 @@
 ---
 name: done
-description: "Run `codello done`, or `codello done --failed`, at the end of a turn only when the task is finished and the user can close the session after reading only the `-m` line: no PR to review, no question, no decision, and no findings, answer, or report they still have to read. Marks the session done (green check) or failed (red ✕). Also /codello:done."
+description: "Run `codello done`, or `codello done --failed`, at the end of a turn only when the task is finished and the user can close the session after reading only the `-m` line: no PR to review, no open question, no unanswered decision card, and no findings, answer, or report they still have to read. If anything is pending, set waiting instead. Marks the session done (green check) or failed (red ✕). Also /codello:done."
 ---
 
 # Report what this session ended as
@@ -33,10 +33,13 @@ Do **not** run `codello done` when any of these is true:
 - A pull request is open and waiting for the user to review, approve, or merge it.
 - There is a follow-up for them: a command to run, a credential to add, a setting to change, a deploy to approve.
 - You asked a question, or a decision is theirs to make.
+- A `codello decide` card or a `codello ask` question is still unanswered.
 - You want them to check, confirm, or look at something.
 - Part of the work is unfinished, deferred, or blocked, and the next step is the user's.
 
 Work of your own that is still running is not a reason to declare a wait: keep working, and run `codello done` when it finishes. In each of the cases above, declare the wait with `codello session-status set waiting -m "<what the user has to do or read>"`, or with `set blocked` when your work cannot continue until the user acts (the `waiting` skill, `/codello:waiting`), end the turn, and say plainly in the reply what is pending. Marking such a session done is worse than saying nothing: it tells them there is nothing to come back for, and the session removes itself a day later.
+
+The host enforces the unanswered-card item. While any decision card or question is unanswered, or the user's answers have not reached you yet, `codello done` and `codello done --failed` are refused, and nothing is recorded. A card or question you post after running `codello done` in the same turn drops that done when the turn ends, and nothing tells you so at that point. Set waiting instead, and run `codello done` again once the answers arrive and nothing is left for the user.
 
 The same request can end either way. What decides it is what the user still has to take in:
 
@@ -86,7 +89,7 @@ Do not use `--failed` for work you merely have not finished yet, or for a task t
 | `codello done` in a task | Green check and the report card | `Done · <session>`, with your summary as the body | As for `codello done`; the report goes to the session that started the task |
 | `codello done --failed` in a task | Red ✕ and the report card | As for `--failed` | Stays open; the report goes to the session that started the task |
 
-Either outcome clears the moment the user types in the session, like any other indicator. A session blocked on a permission prompt or a question still reads as blocked — that outranks both.
+Either outcome clears the moment the user types in the session, like any other indicator. A session blocked on a permission prompt, a question, or a decision card still reads as blocked; that outranks both.
 
 ## Running it
 
@@ -95,15 +98,17 @@ Run the command with `dangerouslyDisableSandbox: true`. The CLI talks to the loc
 Expect one of:
 
 ```
-Task reported as done. When this turn ends the session is marked done; it closes itself in 24 hours.
+Task reported as done. When this turn ends the session is marked done; it closes itself in 24 hours. If you post a decision card or a question before this turn ends, the done is dropped: set waiting instead, and run `codello done` again once the answers arrive and nothing is left for the user.
 ```
 
 ```
-Task reported as failed. When this turn ends the session is marked failed and you are notified.
+Task reported as failed. When this turn ends the session is marked failed and you are notified. If you post a decision card or a question before this turn ends, the failure is dropped: set waiting instead, and run `codello done` again once the answers arrive and nothing is left for the user.
 ```
 
-Nothing is armed until that line prints. If the command prints anything else, report exactly what it said and end the turn normally:
+An older CLI prints only the first two sentences. Nothing is armed until that line prints. If the command prints anything else, report exactly what it said and end the turn normally:
 
+- `Not reported as done. 8 decision cards are still waiting on the user, ...`: the user has not answered every card or question yet. Run `codello session-status set waiting -m "<what you need>"` and end the turn. Run `codello done` after the answers arrive and nothing else is left.
+- `Not reported as done. The user answered your decision cards, and 2 answers are on the way to you ...`: the answers reach you as your next prompt. End the turn without `codello done`, act on them when they arrive, and run `codello done` then if nothing is left.
 - `Not in a Codello session`: Codello did not spawn this PTY. Only a `codello claude` session, the web "new session" button, or a scheduled session can report an outcome.
 - `Codello is not running on this host` (older CLIs print `Server not running`): Codello is down on this host, so there is nothing to record the outcome.
 
