@@ -1,6 +1,6 @@
 ---
 name: decide
-description: "Post every decision only the user can make in one `codello decide --file -` call, a JSON list read from stdin, with any text the user approves in full in each decision's `details`; then `codello session-status set waiting`. The user answers on their phone, and every answer comes back to you as one prompt. Never list the decisions in your reply, and never write \"see the reply\" in a decision. Needs a `codello` CLI with the `decide` command."
+description: "Post every decision only the user can make in one `codello decide --file -` call, a JSON list read from stdin, with any text the user approves in full in each decision's `draft`, where the user can edit it, and other long material in `details`; then `codello session-status set waiting`. The user answers on their phone, and every answer comes back to you as one prompt. Never list the decisions in your reply, and never write \"see the reply\" in a decision. Needs a `codello` CLI with the `decide` command."
 ---
 
 # Put decisions to the user
@@ -41,7 +41,7 @@ Switch the integration tests from SQLite to Postgres?
 Recommended: Switch to Postgres.
 ```
 
-Keep the question that short. Anything longer, such as a multi-step plan, a list of files, or draft text, goes in `details`.
+Keep the question that short. Anything longer, such as a multi-step plan or a list of files, goes in `details`; text the user may want to edit goes in `draft`.
 
 Give 1 to 3 `options`. Put your recommendation first; the card marks the first option Recommended. Leave `options` out when the answer is open-ended. The user can always type their own answer, or skip the decision, so every option is a real answer: never an "Other" option, and never a bare "Recommended" one. A current CLI refuses both.
 
@@ -51,13 +51,39 @@ Write each option as `Label: one-line description`, so a tap on it makes sense w
 - The description says what that choice does or costs, in one line. Keep the whole option under 120 characters, which every Codello version shows in full.
 - Never write `(recommended)` in an option. The card already marks the first option Recommended, and the words would show twice.
 
-## Put the text being approved, and anything longer, in `details`
+## Put the text being approved in `draft`, and anything else longer in `details`
 
-When a decision rests on a multi-step plan or other material longer than the bullets, put it in `details`. When a decision approves text (an email, a ticket comment, a PR description, a message), put that text in full in the decision's `details`, as Markdown: recipients, subject, and body. The card shows it behind a Details toggle under the question. Never write "see the reply", "the draft above", or "the note I drafted earlier": the user answers from the card, and your reply may be hours of scrolling away. `details` holds up to 16 KB.
+When a decision approves text before it goes out (an email, a reply, a ticket comment, a PR description, a commit message, a message), put that text in full in `draft`. The card shows it in an editable box above the options; the user edits it, or leaves it, and their version comes back with the answer. `draft` is plain text, at most 16 KB, on a single-choice decision only. Put what the user reads but does not edit, such as an email's recipients and subject, in `details`.
+
+When a decision rests on a multi-step plan or other material longer than the bullets, put it in `details`. `details` is read-only Markdown, at most 16 KB, shown behind a Details toggle under the question. On a multi-select decision, which takes no `draft`, put any text being approved in `details`.
+
+Never write "see the reply", "the draft above", or "the note I drafted earlier": the user answers from the card, and your reply may be hours of scrolling away.
+
+```json
+{
+  "question": "Send this reply to Dana? Edit the text first if you want.\n\n- **Why:** she asked for a date.\n\nRecommended: Send it.",
+  "options": ["Send it: email this text to Dana", "Hold it: do not send"],
+  "draft": "Hi Dana,\n\nThe export fix ships Thursday."
+}
+```
+
+Each answer line says `(draft edited)` or `(draft unchanged)`, and the edited text follows the numbered lines in a block, so act on the text in the block, never on your original:
+
+```
+1. Send this reply to Dana? → Send it (draft edited)
+
+---draft 1---
+Hi Dana,
+
+The export fix ships Friday.
+---end draft 1---
+```
+
+On the command line, use `--draft "<text>"`. `codello decide revise <id> --draft "<text>"` replaces the draft and drops the user's edits. If the CLI or the Codello server is too old for drafts, the call exits 1, posts nothing, and says so; put the text in `details` instead.
 
 ## Post every decision in one call
 
-Post all of a turn's decisions in one call, with a JSON list on stdin. Each entry has a `question`, and optionally `options` (a list of 1 to 3 strings) and `details`. The CLI checks every entry before it posts anything, so one bad entry posts none of them; fix it and run the call again. A quoted heredoc keeps the shell from touching the text:
+Post all of a turn's decisions in one call, with a JSON list on stdin. Each entry has a `question`, and optionally `options` (a list of 1 to 3 strings), `details`, and `draft`. The CLI checks every entry before it posts anything, so one bad entry posts none of them; fix it and run the call again. A quoted heredoc keeps the shell from touching the text:
 
 ```bash
 codello decide --file - <<'JSON'
@@ -69,7 +95,8 @@ codello decide --file - <<'JSON'
   {
     "question": "Send Dana the reply about when the export fix ships?\n\n- **Why:** she asked for a date, and the reply promises Thursday.\n- **Send it:** Dana gets the date today.\n- **Hold it:** no promise until the fix merges.\n\nRecommended: Send it.",
     "options": ["Send it: Dana gets the date today", "Hold it: no promise until the fix merges"],
-    "details": "**To:** dana@example.com\n\n**Subject:** Re: Export fix\n\nHi Dana,\n\nThe export fix ships Thursday."
+    "details": "**To:** dana@example.com\n\n**Subject:** Re: Export fix",
+    "draft": "Hi Dana,\n\nThe export fix ships Thursday."
   }
 ]
 JSON
@@ -83,7 +110,7 @@ A lone decision can also go on the command line: `codello decide "<question>" --
 
 When you learn something that changes a decision you already posted, change that decision. Never post a new decision that says it replaces, supersedes, or corrects an earlier card: the user would see both cards and could answer the stale one.
 
-- **To correct or replace a decision**, run `codello decide revise <id>` with the new decision, either as a paragraph with `--options` and `--details`, or with `--file` holding one entry in the same JSON shape. The card keeps its place and shows a Revised mark. If the user already answered it, the answer is cleared and the decision is open again.
+- **To correct or replace a decision**, run `codello decide revise <id>` with the new decision, either as a paragraph with `--options`, `--details`, and `--draft`, or with `--file` holding one entry in the same JSON shape. The card keeps its place and shows a Revised mark. If the user already answered it, the answer is cleared and the decision is open again.
 - **To drop a decision** that no longer matters, run `codello decide withdraw <id>`, with several ids at once if you need. The card disappears.
 
 ```bash
@@ -117,7 +144,8 @@ Run the command with `dangerouslyDisableSandbox: true`. The CLI talks to the loc
 | `codello decide --file <path>` | The same, read from a file |
 | `codello decide "<question>"` | Post one decision the user answers in their own words |
 | `codello decide "<question>" --options "A\|B\|C"` | Offer up to 3 options; the first is your recommendation |
-| `codello decide "<question>" --details "<markdown>"` | Show the text being approved behind a Details toggle |
+| `codello decide "<question>" --details "<markdown>"` | Show read-only material, such as a plan or an email's recipients, behind a Details toggle |
+| `codello decide "<question>" --draft "<text>"` | Show text the user can edit before answering; their version comes back with the answer |
 | `codello decide revise <id> "<question>" --options "A\|B"` | Replace a decision you posted, keeping its id and place |
 | `codello decide revise <id> --file -` | The same, with one JSON entry read from stdin |
 | `codello decide withdraw <id>...` | Remove decisions you posted; all or none |

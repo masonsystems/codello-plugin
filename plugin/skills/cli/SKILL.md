@@ -213,7 +213,7 @@ codello done --failed -m "Staging DB unreachable"        # could not be done (sk
 codello quit                                             # the user said "do X and quit" and X succeeded (skill: quit)
 codello emergency -m "Prod API 500s; rolled back, failing" # harm happening now you cannot contain; any agent (skill: emergency)
 codello decide --file - <<'JSON'  # every decision only the user can make, in one call; answers return as one prompt (skill: decide)
-[{"question": "<what, why, recommendation>", "options": ["<recommended>", "<alternative>"], "details": "<the full text being approved>"}]
+[{"question": "<what, why, recommendation>", "options": ["<recommended>", "<alternative>"], "draft": "<text the user approves and may edit>"}]
 JSON
 codello decide "<what, why, recommendation>" --options "<recommended>|<alternative>" --details "<markdown>"  # one decision
 codello watch <session>                                  # ask the user to let this session decide another's routine prompts (skill: watch-policy)
