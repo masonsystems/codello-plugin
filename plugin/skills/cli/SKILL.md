@@ -90,6 +90,25 @@ codello sessions --json | jq -r \
    | "\(.shortId) \(.state) \(.displayName) — \(.cwd)"'
 ```
 
+**Which sessions wait on an open decision card?** `codello decide list --all` lists every live session's `codello decide` cards that have not reached their agent, one per line: the session's short id and name, the decision id, its status (`open`, `answered`, or `dismissed`), how long ago it was posted, and the question's first line. `--session <id-prefix>` narrows it to one session, and `--json` gives `sessionId`, `sessionName`, `decisionId`, `status`, `revisions`, `postedAt`, and `question`. It only reads: another session's cards stay that session's to revise or withdraw, and the user's to answer. `codello sessions --json` also counts each live terminal session's open cards in `openDecisions`, absent on a host too old to count them:
+
+```bash
+codello decide list --all
+codello sessions --json | jq -r \
+  '.[] | select(.state=="waiting-on-you") | "\(.shortId) \(.openDecisions // "?") open card(s) \(.displayName)"'
+```
+
+A session that is `waiting-on-you` with `openDecisions` of 0 is waiting on something other than a card, such as a PR review or a question in its reply.
+
+**Which sessions have finished, and can they close?** `codello sessions --done` lists each live session that reads done or failed after `codello done`, with its whole report under it: the summary, tests, next step, link, and its open decision cards and questions. `--json` gives the same as `doneReport` (`status`, `summary`, `tests`, `next`, `link`, `reportedAt`) plus `openDecisions` and `openQuestions` on each row. Read every report before you close anything, then close the ones that need nothing more in one command:
+
+```bash
+codello sessions --done
+codello stop <id> <id> ...
+```
+
+`codello stop` with ids closes nothing until every named session passes its checks. It refuses, and names each one, when an id is unknown or ambiguous, names a session Codello did not start, or names a session with an open card or question; read open cards with `codello decide list --all` and open questions in the app. Pass `--force` only when the user has said those cards and questions can go; it does not close a session Codello did not start. Once the checks pass, a close the host refuses is reported and does not undo the others. A host too old to count cards is refused the same way. A host restart drops the done state, so a session that reported before the host's last restart is not listed; read it with `codello tail <id>`.
+
 **What's running in a given project?**
 
 ```bash
@@ -173,12 +192,15 @@ id**, and these commands target that session implicitly — no id argument:
 ```bash
 codello rename "Fix flaky auth test"    # retitle this session in the user's list
 codello snooze [until-wake|1h|4h|8h|clear]  # stop surfacing this session as waiting
+codello push-level only-when-waiting    # push only when this session needs the user (also: follow, muted)
 codello copy --md notes.md              # rich text → the clipboard of the device viewing this session
 codello copy --md notes.md --session <pty-id>   # ...or aim it at another session
 ```
 
 `snooze` is for when you've armed a wait Codello can't see — a cron, a CI run, a promised
 follow-up — so the session doesn't sit in the user's list looking like it needs them.
+
+When this session runs on timers or wake-ups and its routine turn end shouldn't push, run `codello push-level only-when-waiting`; permission prompts, questions, and declared waits still push. An older Codello host answers that it needs an update; carry on without it.
 
 The commands that report on the task itself also target this session implicitly, and each
 has its own skill with the rules for when to run it:
@@ -187,17 +209,20 @@ has its own skill with the rules for when to run it:
 codello session-status set blocked -m "Sign in to AWS"  # work stopped until the user acts; shows red (skill: waiting)
 codello session-status set waiting -m "Review PR #12"   # this turn ends on something the user may answer; shows amber (skill: waiting)
 codello session-status clear                             # the wait ended without them replying
-codello done -m "Merged the retry fix"                   # finished, nothing left for the user (skill: done)
+codello done -m "Merged the retry fix"                   # finished, user can close it unread (skill: done)
 codello done --failed -m "Staging DB unreachable"        # could not be done (skill: done)
 codello quit                                             # the user said "do X and quit" and X succeeded (skill: quit)
 codello emergency -m "Prod API 500s; rolled back, failing" # harm happening now you cannot contain; any agent (skill: emergency)
 codello decide --file - <<'JSON'  # every decision only the user can make, in one call; answers return as one prompt (skill: decide)
-[{"question": "<what, why, recommendation>", "options": ["Rec", "Other"], "details": "<the full text being approved>"}]
+[{"question": "<what, why, recommendation>", "options": ["<recommended>", "<alternative>"], "draft": "<text the user approves and may edit>"}]
 JSON
-codello decide "<what, why, recommendation>" --options "Rec|Other" --details "<markdown>"  # one decision
+codello decide "<what, why, recommendation>" --options "<recommended>|<alternative>" --details "<markdown>"  # one decision
+codello watch <session>                                  # ask the user to let this session decide another's routine prompts (skill: watch-policy)
+codello permit <id> allow                                # as a watcher, allow one prompt once; `pass` sends it to the user (skill: watch-policy)
 codello secret list                                      # names of the credentials this session holds (skill: secrets)
 codello secret request GITHUB_TOKEN --reason "Deploy"    # ask for a credential without it entering the chat (skill: secrets)
 TOKEN="$(codello secret get GITHUB_TOKEN)"               # use a held credential; only ever inside $(…) (skill: secrets)
+codello message api-server "<self-contained text>"       # message another session's agent; the user approves it (skill: message)
 ```
 
 `session-status set blocked` and `set waiting` exist because a session with a `Monitor`, a background
@@ -219,6 +244,20 @@ Related, and covered by this plugin's own slash commands rather than raw CLI: **
 session later), **`/codello:copy`**, **`/codello:handoff`** · **`/codello:resume`** ·
 **`/codello:compact`** · **`/codello:fresh`** · **`/codello:continue`**. Prefer those over
 hand-rolling `codello spawn` / `schedule add` / `history`.
+
+## When this session is the Hub
+
+The Hub is the one session on a host that the user registered with `codello hub set`; the host wakes it with events from the other sessions. `codello hub status` shows the registration and its settings. The Hub's `codello message` to a session on the same host skips the user's approval card when the Hub's message setting covers that session:
+
+```bash
+codello hub messages tasks   # the default: the Hub's own tasks the user has not taken over
+codello hub messages all     # any live session on this host, once the user approves it on a device
+codello hub messages ask     # none: every message from the Hub waits for its card
+```
+
+`tasks` and `ask` apply at once. `all` changes nothing until the user approves it: the command shows the user a card on their device and waits up to 10 minutes. It exits 0 only when the user approves; when they deny it or don't answer, it exits 1 and the setting stays as it was. Run it in the foreground, and don't run it again after a denial unless the user asks. A new Hub, including one moved with `codello hub set --replace`, starts at `tasks` even when the old Hub was at `all`.
+
+A message to another host always waits for its card. A message the setting covers arrives labeled `From the Hub` in the target's chat; one the session refuses or never confirms goes back to its card. Change the setting only when the user asks: widening it lets the Hub skip cards the user would otherwise see. A host that predates the setting makes `codello hub messages` exit 1 and say to run `codello restart`.
 
 ## Older / dead sessions
 
@@ -250,7 +289,9 @@ pre-compact agent id can still be resolved to a project.
 - **Never run bare `codello stop`** to fix something. It kills every PTY on the machine
   and cuts the user off from their phone. `codello restart` preserves sessions. To close
   one session, run `codello stop <session-id>` (full id or unique prefix): it closes only
-  that session, which stays reopenable from the app. It needs a CLI whose
+  that session, which stays reopenable from the app. Several ids close several sessions;
+  nothing closes while any id fails to resolve, or names a session with an open card or
+  question and `--force` is not given. It needs a CLI whose
   `codello spawn --help` lists `--prompt-file`; an older CLI reads the id as a request to
   stop the server.
 - **`codello logs` reads *production* by default** even while you're testing elsewhere;
