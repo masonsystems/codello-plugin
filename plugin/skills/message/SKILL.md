@@ -1,11 +1,11 @@
 ---
 name: message
-description: "Send a message to the agent in another Codello session, on this host or another host on the user's account — `codello message <session> \"<text>\"` — and handle one you receive. The user approves every message on their phone before it arrives. Use this INSTEAD of ending a turn that asks the user to copy text into another session by hand: another session holds the context you need, is doing related work, or should hear what you found. Not for your own subagents or teammates (use SendMessage), a question only the user can answer, or a shell session. Triggers: you are about to write \"paste this into the other session\" or a Blocker whose only action is relaying text; a turn arrives that begins `From session '…' on … (reply: codello message …):`."
+description: "Send a message to the agent in another Codello session, on this host or another host on the user's account — `codello message <session> \"<text>\"` — and handle one you receive. The user approves every message, inline in the Codello conversation where they talk to you, before it arrives. Use this INSTEAD of ending a turn that asks the user to copy text into another session by hand: another session holds the context you need, is doing related work, or should hear what you found. Not for your own subagents or teammates (use SendMessage), a question only the user can answer, or a shell session. Triggers: you are about to write \"paste this into the other session\" or a Blocker whose only action is relaying text; a turn arrives that begins `From session '…' on … (reply: codello message …):`."
 ---
 
 # Message another session
 
-`codello message` sends text from this session to the agent in another Codello session. The target can run on this host or on any other host on the user's account. The user sees the sender, the target, and the exact text on their phone, and taps Send or Discard. Nothing reaches the target until they tap Send.
+`codello message` sends text from this session to the agent in another Codello session. The target can run on this host or on any other host on the user's account. The user sees the sender, the target, and the exact text inline, in the Codello conversation where they talk to you, and taps Send or Discard. Nothing reaches the target until they tap Send.
 
 ```bash
 codello message api-server "The /v2/orders response now includes shipped_at (ISO 8601, UTC). See docs/api/orders.md in masonsystems/shop, branch cod-512-shipped-at."
@@ -47,7 +47,7 @@ A lookup that fails exits before anything is sent:
 |------|---------------|------------|
 | 2 | No session matches, more than one agent session matches (the error lists them), the name is this session, or the target is a shell or its agent has exited | Pick one of the listed matches by id, or tell the user which session you could not find |
 | 3 | The target's host is offline, or other hosts could not be checked | Say which host was unreachable and what you wanted to send; do not retry in a loop |
-| 1 | The message is empty, or this is not a Codello session | Fix the call, or say that you cannot send from here |
+| 1 | The message is empty; this is not a Codello session; or the host could not take it: "Codello is not running on this host", "Could not reach Codello on this host", or "This Codello does not support messages; update it" | Fix the call, or say that you cannot send from here |
 
 A session named `status` collides with the `codello message status` subcommand. Address it by its id.
 
@@ -58,7 +58,7 @@ The receiving agent has none of your context. Write the message so it can act on
 - Name the repository, branch, file paths, and ticket.
 - State the facts, not a pointer to them: the value, the error text, the decision already made.
 - Say what you want back, if anything, and whether you are waiting for it.
-- Keep it to what the other agent needs. The user reads every word on a phone before approving it.
+- Keep it to what the other agent needs. The user reads every word on the card before approving it.
 
 A message over 20,000 characters is refused. A session can have at most 8 messages open at once.
 
@@ -67,8 +67,8 @@ A message over 20,000 characters is refused. A session can have at most 8 messag
 The command returns immediately. Keep working.
 
 - **Don't block your turn with `--wait` unless your next step needs the answer.** With `--wait`, the command blocks until the message settles and exits with one code per ending, listed below.
-- **Check on a message you did not wait for** with `codello message status <id>`.
-- **Declare the session waiting only if nothing else can proceed** until the reply arrives. The user must still tap Send, so name the pending message in the `-m` line: "Approve the message to api-server about shipped_at". The `waiting` skill has the rules.
+- **A message waiting for approval is not a blocker.** The user already sees it inline, in the Codello conversation where they talk to you. Don't mention it to them, don't ask them to approve it, and don't set a waiting status for it. Keep working.
+- **Don't poll for it.** Codello types a line into this session when the message is delivered or discarded; one delivered under a standing grant settles with no line. `codello message status <id>` shows its state if you need it sooner.
 
 | `--wait` exit | Ending | What to do |
 |------|--------|------------|
