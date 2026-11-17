@@ -43,7 +43,7 @@ Switch the integration tests from SQLite to Postgres?
 Recommended: Switch to Postgres.
 ```
 
-Keep the question that short. Anything longer, such as a multi-step plan or a list of files, goes in `details`; text the user may want to edit goes in `draft`.
+Keep the question that short. Anything longer, such as a multi-step plan or a list of files, goes in `details`; text the user approves, such as an email or a comment, goes in `draft`.
 
 Give 1 to 3 `options`. Put your recommendation first; the card marks the first option Recommended. A multi-select decision takes up to 8 and names the ones you recommend in `recommended` instead (the next section). Leave `options` out when the answer is open-ended. The user can always type their own answer, or skip the decision, so every option is a real answer: never an "Other" option, and never a bare "Recommended" one. A current CLI refuses both.
 
@@ -78,7 +78,7 @@ On the command line, use `--multi` with `--recommended "A|B"`: `codello decide "
 
 ## Put the text being approved in `draft`, and anything else longer in `details`
 
-When a decision approves text before it goes out (an email, a reply, a ticket comment, a PR description, a commit message, a message), put that text in full in `draft`. The card shows it in an editable box above the options; the user edits it, or leaves it, and their version comes back with the answer. `draft` is plain text, at most 16 KB, on a single-choice decision only. Put what the user reads but does not edit, such as an email's recipients and subject, in `details`.
+When a decision approves text before it goes out (an email, a reply, a ticket comment, a PR description, a commit message, a message), put that text in full in `draft`. The card shows it in an editable box above the options; the user edits it, or leaves it, and their version comes back with the answer. `draft` is plain text, at most 16 KB, on a single-choice decision only. Put what the user reads but does not edit, such as the recipients, subject, links, and the evidence behind the text, in `details`.
 
 When a decision rests on a multi-step plan or other material longer than the bullets, put it in `details`. `details` is read-only Markdown, at most 16 KB, shown behind a Details toggle under the question. On a multi-select decision, which takes no `draft`, put any text being approved in `details`.
 
