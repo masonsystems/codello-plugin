@@ -145,6 +145,8 @@ A lone decision can also go on the command line: `codello decide "<question>" --
 
 When you learn something that changes a decision you already posted, change that decision. Never post a new decision that says it replaces, supersedes, or corrects an earlier card: the user would see both cards and could answer the stale one.
 
+A decision that is still open stays on its card until the user answers it. Never post it again on a new card, not to restate it after other work, a permission approval, or a reply. Before you post, run `codello decide list` and post only the decisions it does not show. Codello refuses a decision whose question matches one this session has open, posts nothing, and names the open decision's id; `--force` posts it anyway.
+
 - **To correct or replace a decision**, run `codello decide revise <id>` with the new decision, either as a paragraph with `--options`, `--details`, and `--draft`, or with `--file` holding one entry in the same JSON shape. The card keeps its place and shows a Revised mark. If the user already answered it, the answer is cleared and the decision is open again.
 - **To drop a decision** that no longer matters, run `codello decide withdraw <id>`, with several ids at once if you need. The card disappears.
 
