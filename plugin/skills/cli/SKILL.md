@@ -107,7 +107,7 @@ codello sessions --done
 codello stop <id> <id> ...
 ```
 
-`codello stop` with ids closes nothing until every named session passes its checks. It refuses, and names each one, when an id is unknown or ambiguous, names a session Codello did not start, or names a session with an open card or question; read open cards with `codello decide list --all` and open questions in the app. Pass `--force` only when the user has said those cards and questions can go; it does not close a session Codello did not start. Once the checks pass, a close the host refuses is reported and does not undo the others. A host too old to count cards is refused the same way. A host restart drops the done state, so a session that reported before the host's last restart is not listed; read it with `codello tail <id>`.
+`codello stop` with ids closes nothing until every named session passes its checks. It refuses, and names each one, when an id is unknown or ambiguous, names a session Codello did not start, or names a session with an open card or question; read open cards with `codello decide list --all` and open questions in the app. Pass `--force` only when the user has said those cards and questions can go; it does not close a session Codello did not start. It also refuses another session the user is still using: one the user has open on a device, one that is mid-turn, or one the user sent a message after its done report. Such a session is still in use, whatever its report said: leave it open, and never pass `--force` for it. Once the checks pass, a close the host refuses is reported and does not undo the others. A host too old to count cards, or to say whether a session is in use, is refused the same way. A host restart drops the done state, so a session that reported before the host's last restart is not listed; read it with `codello tail <id>`.
 
 **What's running in a given project?**
 
@@ -291,7 +291,9 @@ pre-compact agent id can still be resolved to a project.
   one session, run `codello stop <session-id>` (full id or unique prefix): it closes only
   that session, which stays reopenable from the app. Several ids close several sessions;
   nothing closes while any id fails to resolve, or names a session with an open card or
-  question and `--force` is not given. It needs a CLI whose
+  question and `--force` is not given. It also refuses a session the user has open, that
+  is mid-turn, or that the user answered after its done report. That session is still in
+  use: leave it open, and never pass `--force` for it. It needs a CLI whose
   `codello spawn --help` lists `--prompt-file`; an older CLI reads the id as a request to
   stop the server.
 - **`codello logs` reads *production* by default** even while you're testing elsewhere;
