@@ -160,6 +160,12 @@ codello sessions --json | jq -r --arg s "$SRV" \
   '.[] | "\(.displayName): https://codello.app/terminal?server=\($s)&session=\(.id)"'
 ```
 
+**What's running on the user's other hosts?** `codello sessions --json` lists this host only. Add `--all-hosts` for the account's other hosts too: each of their sessions is one more row with `host` set to that host's name, and only `id`, `shortId`, `name`, `displayName`, `cwd`, `type`, and `state` are meaningful on it. Lines on stderr say why a host has no rows: it is not reachable, it needs an update, or no host rule (Settings > Agent messaging) lets this host message it. `--all-hosts` does not combine with `--recent`, `--changed-since`, `--stalled`, or `--done`.
+
+```bash
+codello sessions --all-hosts --json | jq -r '.[] | "\(.host) \(.shortId) \(.state) \(.displayName)"'
+```
+
 **Other reads:** `codello status` (login, server pid/port, cloud latency, all sessions
 with deep links) · `codello viewers [pty-id]` (who's watching + the PTY size, and the
 per-viewer sizes that explain a clamped width) · `codello logs search "<text>" --since 1h`

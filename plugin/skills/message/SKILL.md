@@ -35,13 +35,13 @@ Good reasons:
 
 The target is an id prefix or the session's exact name, matched case-insensitively. The host matches its own sessions first, then asks every other host on the account.
 
-List the sessions on this host with `codello sessions --json`. Use `shortId` or `displayName` (the `codello:cli` skill lists the fields). A session on another host does not appear there; name it by its exact name, the one the user sees in their session list. When a message arrives from another session, its prefix gives the sender's short id.
+List the sessions on this host with `codello sessions --json`. Use `shortId` or `displayName` (the `codello:cli` skill lists the fields). A session on another host does not appear there. List those with `codello sessions --all-hosts --json`: each row from another host carries `host`, `shortId`, and `name`. A host's sessions are listed only when a host rule in Settings > Agent messaging lets this host message it, and the lines on stderr say why any host has none; for such a host, name the session by its exact name, the one the user sees in their session list. When a message arrives from another session, its prefix gives the sender's short id.
 
 A lookup that fails exits before anything is sent:
 
 | Exit | What it means | What to do |
 |------|---------------|------------|
-| 2 | No session matches, more than one agent session matches (the error lists them), the name is this session, or the target is a shell or its agent has exited | Pick one of the listed matches by id, or tell the user which session you could not find |
+| 2 | No session matches, more than one agent session matches (the error lists them), the name is this session, or the target is a shell or its agent has exited | Pick one of the listed matches by id. When nothing matches, the error names the hosts that answered and lists the closest session names with their hosts and ids: resend to one of those ids only when it is plainly the session you meant, and otherwise tell the user which session you could not find |
 | 3 | The target's host is offline, or other hosts could not be checked | Say which host was unreachable and what you wanted to send; do not retry in a loop |
 | 1 | The message is empty; this is not a Codello session; or the host could not take it: "Codello is not running on this host", "Could not reach Codello on this host", or "This Codello does not support messages; update it" | Fix the call, or say that you cannot send from here |
 
