@@ -79,7 +79,7 @@ codello start
 
 ## Install
 
-The Codello CLI ships this plugin and passes it to every Claude Code session it spawns or resumes, so a session started from Codello already has it, at the version that matches the running CLI. You don't need to install anything for those sessions. If you installed the marketplace copy earlier, `codello doctor` tells you it is no longer needed and prints the uninstall command; the bundled copy takes precedence either way.
+The Codello CLI ships this plugin and passes it to every Claude Code session it spawns or resumes, so a session started from Codello already has it, at the version that matches the running CLI. You don't need to install anything for those sessions. If you installed the marketplace copy earlier, `codello doctor` tells you Codello sessions don't need it and prints the uninstall command, to run if you don't use Claude Code outside Codello; the bundled copy takes precedence either way. If `codello doctor` reports that no bundled plugin was found, sessions fall back to the marketplace copy.
 
 Install from the marketplace only for Claude Code sessions that Codello did not start, where the `codello:docs` and `codello:cli` skills are still useful. In Claude Code:
 
@@ -88,18 +88,18 @@ Install from the marketplace only for Claude Code sessions that Codello did not 
 /plugin install codello@codello-marketplace
 ```
 
-The marketplace copy updates only when its version bumps, so it can trail the CLI. Codello sessions never depend on it.
+The marketplace copy can trail the CLI.
 
 ## Upgrading from codetogo
 
-CodeToGo is now Codello. The plugin, its namespace, and the marketplace are renamed in one step, and the old `codetogo` names are gone. Run these four commands in Claude Code:
+CodeToGo is now Codello. The plugin, its namespace, and the marketplace are renamed in one step, and the old `codetogo` names are gone. Remove the old plugin and marketplace in Claude Code:
 
 ```
 /plugin uninstall codetogo@codetogo-marketplace
 /plugin marketplace remove codetogo-marketplace
-/plugin marketplace add masonsystems/codello-plugin
-/plugin install codello@codello-marketplace
 ```
+
+Sessions Codello starts load the plugin bundled with the CLI. Install the `codello` marketplace copy only if you also run Claude Code outside Codello, as described in [Install](#install).
 
 Install a Codello CLI new enough to spawn `/codello:*`. The server relaunches the agent with `claude /codello:resume <path>` and `claude /codello:continue <id>` when `/codello:compact` or `/codello:fresh` swaps it in place, so on an older CLI the replacement is told to run a command it no longer has. Run `codello upgrade`, then `codello restart`.
 
