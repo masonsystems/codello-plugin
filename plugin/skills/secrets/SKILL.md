@@ -83,7 +83,8 @@ Every ending is explicit and exits non-zero, so you can branch on it:
 | Ending | What it means | What to do |
 |--------|---------------|------------|
 | `Declined` | The user chose not to provide it | Stop asking. Say what you cannot do without it. |
-| `Timed out` | Nobody answered within the window (default 10 minutes, maximum 30) | Say you are blocked and what you need; do not loop. |
+| `Timed out ..., but the request is still open` (exit 3) | Nobody answered within the window (default 10 minutes, maximum 30). The request stays on the user's devices, and the CLI sets the session to waiting unless it runs inside a subagent | End your turn and do not ask again. When the user sends it, Codello types a line into the session that says how to read it, usually `"$(codello secret get NAME)"`; continue from there. If the output says to set waiting yourself, run the command it gives first. If Codello restarts before the user answers, the request is gone; ask again. |
+| `Timed out` (exit 1) | Nobody answered, and an older Codello server ended the request | Say you are blocked and what you need; do not loop. |
 | `The session closed` | The session went away while waiting | Nothing to do. |
 
 Do not retry a decline. The user answered. A declined `--refresh` leaves the old value in place.
