@@ -29,7 +29,7 @@ The command blocks until the user answers. It writes an instruction to stderr, a
 
 ```
 [codello] Got GITHUB_TOKEN. Put the value where it belongs with shell substitution, …
-/Users/eric/.codetogo/uploads/<session>/secrets/<id>-GITHUB_TOKEN
+/Users/eric/.codello/uploads/<session>/secrets/<id>-GITHUB_TOKEN
 ```
 
 You do not need the file. Get the value from the session instead.
