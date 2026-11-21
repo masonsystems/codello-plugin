@@ -62,7 +62,7 @@ Run `codello session-status clear` when the wait ends without the user typing in
 - The thing you were waiting for arrived another way: the PR got merged, CI finished, the blocker went away, a background task delivered what you needed.
 - You are about to keep working on your own after all. Clear it before your first tool call in that turn, not at its end.
 
-You do not need to clear it when the user replies. Their message, typed in the terminal or sent from the phone, retires the declaration on its own, and so do `codello done` and the user dismissing the session from the dashboard. If the next user message arrives and you still need something, declare again in that turn.
+You do not need to clear it when the user replies. Their message, typed in the terminal or sent from the phone, retires the declaration on its own, and so do `codello done` and the user dismissing the session from the dashboard. If the next user message arrives and you still need something, declare again in that turn. A declaration their message retired stays retired: a later turn does not bring it back, including a turn that a background-task notification or a timer started. So if a turn ends still needing the same thing from the user and you have not declared since their last message, declare again in that turn. A request written only in your reply is not a declaration: no dot shows and no push goes out.
 
 ## In a task-mode session
 
