@@ -163,7 +163,7 @@ When a subagent, a teammate, or a review you are waiting on is still running and
 Run the command with `dangerouslyDisableSandbox: true`. The CLI talks to the local server, which a sandboxed command cannot reach.
 
 - Exit 0 means the host holds every decision. stdout is one decision id per line, in the order you posted them, and nothing else.
-- A session shows at most 8 open decisions. Post all of yours in one call anyway: the rest wait in a queue, and stderr says which opened and which are queued. Each queued one opens on its own, oldest first, when the user answers or skips an open one or you withdraw one, so don't post them again later. `codello decide list` shows them as `queued`, and you can revise or withdraw them like open ones.
+- A session shows at most 8 open decisions, and up to 16 more wait in a queue. Post all of yours in one call anyway; one call takes up to 24, and a call that would put more than 16 in the queue is refused whole. stderr says which opened and which are queued. Each queued one opens on its own, oldest first, when the user answers or skips an open one or you withdraw one, so don't post them again later. `codello decide list` shows them as `queued`, and you can revise or withdraw them like open ones.
 - Exit 1 means nothing was posted, and stderr says why: a bad entry (each one is named), not in a Codello session, Codello not running, or a Codello server too old to take decisions. Fix a bad entry and post again. If the CLI rejects `--file` or `--details` as an unknown option, it is too old for them: post one `codello decide "<question>" --options "..."` per decision instead, and put any text being approved in that question. Otherwise put the decisions in your reply, and say what stopped the command.
 
 ## Options
