@@ -264,9 +264,9 @@ codello webhook revoke wh_…            # close an open URL
 codello webhook read wh_…              # print the received message
 ```
 
-Give the sender the URL and, with `--auth`, the exact header line `create` printed. The
-URL answers 202 to the first good POST, 410 after that, 401 to a missing or wrong secret,
-and 413 to a body over 64 KB. The message arrives as a prompt that starts "External content
+Give the sender the URL and, when `create` printed one, the exact header line it printed.
+The URL answers 202 to the first good POST, 410 after that, 401 to a missing or wrong
+secret, 413 to a body over 64 KB, and 429 after ten wrong secrets in ten minutes. The message arrives as a prompt that starts "External content
 received on Codello webhook". When Codello cannot hand it over directly, it types one line
 that names `codello webhook read wh_…` instead: run that command to see the message.
 
