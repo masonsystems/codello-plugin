@@ -38,6 +38,9 @@ It has **no memory of this conversation**, so each prompt must be fully self-con
 2. **Title.** Derive a short human title from the task (3–6 words, e.g. "Fix flaky
    auth test"). The session list shows `<dir-basename>: <title>`, so don't repeat the
    project name. Passing a title locks it — auto-naming won't overwrite it.
+   When the title contains `$`, a backtick, or `!`, pass it in single quotes
+   (`-n 'Sell test: $99 presale site'`). In double quotes the shell expands
+   `$99` to nothing before Codello sees the title.
 
 3. **Prompt.** Write a fully self-contained prompt to a file in **your session
    scratchpad directory** (Claude Code names it in your environment as "Scratchpad
@@ -86,8 +89,19 @@ It has **no memory of this conversation**, so each prompt must be fully self-con
    If a spawn went wrong, close just that session with `codello stop <session-id>`;
    bare `codello stop` stops the whole server and every session on it.
 
-6. **Repeat** for each remaining task, then report one line per session — title,
-   directory, short session id — and that they're live in the user's session list.
+6. **Repeat** for each remaining task.
+
+7. **Check that each agent started.** A spawn returns before the agent starts, so
+   a printed session id does not mean the agent is running. Wait about 15 seconds,
+   then run `codello sessions --json`, with the sandbox off like the spawn, and find each new session by its `id`. A
+   session whose `agentSessionId` is `null` has not started an agent, usually
+   because Claude is showing a one-time startup prompt in that directory, such as
+   the trust dialog. It stays there until someone answers it.
+
+8. **Report** one line per session that started (title, directory, and short
+   session id) and that it's live in the user's session list. Name every session that
+   did not start, and tell the user to open it and answer its prompt. Never count
+   one that did not start as running.
 
 If the task split or a target directory is genuinely ambiguous, show the plan and ask
 first; otherwise spawn without asking — starting quickly is the point.
