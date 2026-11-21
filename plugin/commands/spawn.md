@@ -93,15 +93,17 @@ It has **no memory of this conversation**, so each prompt must be fully self-con
 
 7. **Check that each agent started.** A spawn returns before the agent starts, so
    a printed session id does not mean the agent is running. Wait about 15 seconds,
-   then run `codello sessions --json`, with the sandbox off like the spawn, and find each new session by its `id`. A
-   session whose `agentSessionId` is `null` has not started an agent, usually
-   because Claude is showing a one-time startup prompt in that directory, such as
-   the trust dialog. It stays there until someone answers it.
+   then run `codello sessions --json`, with the sandbox off like the spawn, and
+   find each new session by its `id`. A session whose `agentSessionId` is still
+   `null` has not started an agent yet; wait another 15 seconds and check it once
+   more. One still `null` then has not started, usually because Claude is showing
+   a one-time startup prompt in that directory, such as the trust dialog. It stays
+   there until someone answers it.
 
 8. **Report** one line per session that started (title, directory, and short
-   session id) and that it's live in the user's session list. Name every session that
-   did not start, and tell the user to open it and answer its prompt. Never count
-   one that did not start as running.
+   session id) and that it's live in the user's session list. Name every session
+   that did not start, and tell the user to open it and answer its prompt. Never
+   count one that did not start as running.
 
 If the task split or a target directory is genuinely ambiguous, show the plan and ask
 first; otherwise spawn without asking — starting quickly is the point.
@@ -141,8 +143,8 @@ on prose nobody reads. Only `claude` and `codex` can run as tasks.
 - The server auto-starts if it isn't running; the user must have logged in once
   (`codello login`).
 - Each directory should be a trusted Claude project (open Claude there once and accept
-  the trust dialog). In an untrusted dir the new session stalls at the trust prompt —
-  the user *can* answer it from their phone, but warn them it's waiting.
+  the trust dialog). In an untrusted directory the new session stalls at the trust
+  prompt, which the user can answer from their phone; step 7 finds it.
 - Don't pass extra flags to `claude` through `spawn` — unknown options are rejected.
   Put any needed behavior in the prompt instead.
 - A "cloud disconnected" warning means the sessions still start locally but aren't
