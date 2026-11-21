@@ -174,8 +174,9 @@ the only way to see client-side logs).
 - `working` — actively thinking/streaming/running a tool, compacting, parked on a
   running subagent (`rawState: working_subagent`), or parked on background tasks it
   will resume from on its own (`rawState: idle_background`). Leave it alone.
-- `waiting-on-you` — a permission prompt, an open AskUserQuestion
-  (`rawState: awaiting_input`), or a fired attention signal. **Act on this.**
+- `waiting-on-you` — a permission prompt, an open question or form (an AskUserQuestion,
+  an MCP form, or `codello ask`; `rawState: awaiting_input`), or a fired attention
+  signal. **Act on this.**
 - `blocked-on-you` — finished its turn on an unanswered question. Silent otherwise, so
   this is the one that hides sessions stuck since Friday.
 - `idle` — at a prompt, nothing pending.
@@ -186,8 +187,9 @@ the only way to see client-side logs).
 
 `rawState` is the same projected state the Codello app draws its status dot from, so the
 CLI and the phone always agree. `detectorState` is the host's state detector before that
-projection (`idle` under `working_subagent` or `idle_background`, `tool_execution` under
-`awaiting_input`); it is for diagnosis only, and is `null` from a host that predates it.
+projection (for example `idle` under `working_subagent` or `idle_background`, and
+`tool_execution` under `awaiting_input`; it also differs under `declared_waiting` and
+`declared_blocked`); it is for diagnosis only, and is `null` from a host that predates it.
 
 `stateSinceIso` is the last state *change* (null = never transitioned), not the time of
 your call — so "working for 4 hours" is a real, computable signal. It is **UTC**; convert
