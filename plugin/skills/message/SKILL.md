@@ -42,7 +42,7 @@ A lookup that fails exits before anything is sent:
 | Exit | What it means | What to do |
 |------|---------------|------------|
 | 2 | No session matches, more than one agent session matches (the error lists them), the name is this session, or the target is a shell or its agent has exited | Pick one of the listed matches by id. When nothing matches, the error names the hosts that answered and lists the closest session names with their hosts and ids: resend to one of those ids only when it is plainly the session you meant, and otherwise tell the user which session you could not find |
-| 3 | The target's host is offline, or other hosts could not be checked | Say which host was unreachable and what you wanted to send; do not retry in a loop |
+| 3 | The target's host is offline, or other hosts could not be checked | Say which host was unreachable and what you wanted to send; do not retry in a loop. When the error lists the closest session names, resend to one only when it is plainly the session you meant |
 | 1 | The message is empty; this is not a Codello session; or the host could not take it: "Codello is not running on this host", "Could not reach Codello on this host", or "This Codello does not support messages; update it" | Fix the call, or say that you cannot send from here |
 
 A session named `status` collides with the `codello message status` subcommand. Address it by its id.

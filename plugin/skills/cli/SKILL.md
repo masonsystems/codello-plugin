@@ -43,7 +43,7 @@ Prefer `--json` over the human listing in every automated read: the plain output
 not exist prints nothing and exits 0, which looks exactly like "no session matches" — so a
 guessed key does not fail loudly, it fabricates a false negative. The plausible-sounding
 names that do **not** exist: `conversationId`, `claudeSessionId`, `sessionId`, `agentId`,
-`name` (it's `displayName`), `title`, `dir`, `status` (it's `state`). If a lookup comes back
+`title` (it's `displayName`), `dir`, `status` (it's `state`). If a lookup comes back
 empty, re-read the field list above before concluding the session isn't there.
 
 ## The two ids — read this before anything else
@@ -160,7 +160,7 @@ codello sessions --json | jq -r --arg s "$SRV" \
   '.[] | "\(.displayName): https://codello.app/terminal?server=\($s)&session=\(.id)"'
 ```
 
-**What's running on the user's other hosts?** `codello sessions --json` lists this host only. Add `--all-hosts` for the account's other hosts too: each of their sessions is one more row with `host` set to that host's name, and only `id`, `shortId`, `name`, `displayName`, `cwd`, `type`, and `state` are meaningful on it. Lines on stderr say why a host has no rows: it is not reachable, it needs an update, or no host rule (Settings > Agent messaging) lets this host message it. `--all-hosts` does not combine with `--recent`, `--changed-since`, `--stalled`, or `--done`.
+**What's running on the user's other hosts?** `codello sessions --json` lists this host only. Add `--all-hosts` for the account's other hosts too: each of their sessions is one more row with `host` set to that host's name, and only `id`, `shortId`, `name`, `displayName`, `cwd`, `type`, `state`, `rawState`, `needsAttention`, and `createdAt` are meaningful on it. Lines on stderr say why a host has no rows, or not all of them, for example that it is not reachable, needs an update, or has no host rule (Settings > Agent messaging) that lets this host message it. When this host cannot ask the others at all, `--json` prints an `error` object instead of the array and exits 1. `--all-hosts` does not combine with `--recent`, `--changed-since`, `--stalled`, or `--done`.
 
 ```bash
 codello sessions --all-hosts --json | jq -r '.[] | "\(.host) \(.shortId) \(.state) \(.displayName)"'
