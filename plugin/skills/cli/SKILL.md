@@ -189,7 +189,9 @@ codello send-all --rate-limited -m "Limit's reset. Pick up the PR review."
   `codello send-all --rate-limited` resumes them once the limit is lifted.
 - `login-expired` — the turn stopped because the Claude login expired. The user runs
   `/login` in any session on that host, then `codello send-all --login-expired` types
-  "continue" into each stopped one. **Act on this.**
+  "continue" into each stopped one. **Act on this.** After one session's next reply
+  succeeds, the others read their ordinary state again, but `send-all --login-expired`
+  still reaches them.
 - `idle` — at a prompt, nothing pending.
 - `error` / `dead` — errored, or the host side is gone.
 - `unknown` — **no detector for this session**, not "fine". Its state was wiped (e.g. by
