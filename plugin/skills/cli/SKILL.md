@@ -86,7 +86,7 @@ codello sessions --json | jq -r --arg a "$AG" \
 
 ```bash
 codello sessions --json | jq -r \
-  '.[] | select(.state=="waiting-on-you" or .state=="blocked-on-you" or .state=="error")
+  '.[] | select(.state=="waiting-on-you" or .state=="blocked-on-you" or .state=="login-expired" or .state=="error")
    | "\(.shortId) \(.state) \(.displayName) — \(.cwd)"'
 ```
 
@@ -174,6 +174,11 @@ the only way to see client-side logs).
 - `waiting-on-you` — a permission prompt or a fired attention signal. **Act on this.**
 - `blocked-on-you` — finished its turn on an unanswered question. Silent otherwise, so
   this is the one that hides sessions stuck since Friday.
+- `login-expired` — the turn stopped because the Claude login expired. The user runs
+  `/login` in any session on that host, then `codello send-all --login-expired` types
+  "continue" into each stopped one. **Act on this.** After one session's next reply
+  succeeds, the others read their ordinary state again, but `send-all --login-expired`
+  still reaches them.
 - `idle` — at a prompt, nothing pending.
 - `error` / `dead` — errored, or the host side is gone.
 - `unknown` — **no detector for this session**, not "fine". Its state was wiped (e.g. by
