@@ -114,7 +114,7 @@ On the command line, use `--draft "<text>"`. `codello decide revise <id> --draft
 
 ## Fold a decision that settles another into it
 
-The user reads the cards in order and answers each before seeing the next. When one decision's answer depends on another (approve a guide, then where to publish it), put both in one card, or ask the one that settles the other and post the rest after the answer. Otherwise the user asks the later card's question in their answer to the first, and answers twice.
+The user sees every open card at once, in the order you posted them, and can answer them in any order, or accept every recommended answer in one tap. When one decision's answer depends on another (approve a guide, then where to publish it), put both in one card, or ask the one that settles the other and post the rest after the answer. Otherwise the user answers a card that their answer to the other one makes moot, or asks the later card's question in their answer to the first.
 
 ## Post every decision in one call
 
