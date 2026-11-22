@@ -250,8 +250,8 @@ codello decide "<what, why, recommendation>" --options "<recommended>|<alternati
 codello watch <session>                                  # ask the user to let this session decide another's routine prompts (skill: watch-policy)
 codello permit <id> allow                                # as a watcher, allow one prompt once; `pass` sends it to the user (skill: watch-policy)
 codello secret list                                      # names of the credentials this session holds (skill: secrets)
-codello secret request GITHUB_TOKEN --reason "Deploy"    # ask for a credential without it entering the chat (skill: secrets)
-TOKEN="$(codello secret get GITHUB_TOKEN)"               # use a held credential; only ever inside $(…) (skill: secrets)
+codello secret request "GitHub token" --reason "Deploy"  # ask for a credential without it entering the chat (skill: secrets)
+TOKEN="$(codello secret get "GitHub token")"             # use a held credential; only ever inside $(…) (skill: secrets)
 codello message api-server "<self-contained text>"       # message another session's agent; the user approves it (skill: message)
 ```
 

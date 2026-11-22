@@ -18,18 +18,18 @@ This prints the names this session holds, one per line, and never the values. If
 ## Ask for it
 
 ```bash
-codello secret request GITHUB_TOKEN --reason "Opening the release PR"
+codello secret request "GitHub token" --reason "Opening the release PR"
 ```
 
-The name is what you use to get the value back later, and the user sees it above the field. Use a short identifier such as `GITHUB_TOKEN` or `STRIPE_TEST_KEY`. `--reason` says what it is for.
+The name is what the user reads above the field and in the push, and what you use to get the value back later. Name it in plain words, the way the user would say it, such as `"GitHub token"` or `"Stripe test key"`, and quote it, because a name with spaces is one argument. Never use an environment-variable name such as `GITHUB_TOKEN`: the user reads it as configuration, not as the thing you asked for, and the command warns on stderr when you do. `codello secret get` matches names regardless of case, spaces, underscores, and hyphens, so `"github token"` finds `"GitHub token"`. `--reason` says what it is for.
 
 If the user has to create or regenerate the credential first, put the creation page in `--reason` with the name and scopes already filled in, for example `https://github.com/settings/tokens/new?scopes=read:org&description=release-bot`. Lead with that link, not with steps for editing an existing credential, which can't be pre-filled. Write the full `https://` address: the reason is Markdown, so a link such as `[Create the key](https://dashboard.stripe.com/apikeys/create)` opens with one tap on the user's phone, and `codello secret request` warns on stderr when the reason holds no `https://` link.
 
 The command blocks until the user answers. It writes an instruction to stderr, and the path of a 0600 file to stdout as its only line:
 
 ```
-[codello] Got GITHUB_TOKEN. Put the value where it belongs with shell substitution, …
-~/.codello/uploads/<session>/secrets/<id>-GITHUB_TOKEN
+[codello] Got GitHub token. Put the value where it belongs with shell substitution, …
+~/.codello/uploads/<session>/secrets/<id>-GitHub_token
 ```
 
 You do not need the file. Get the value from the session instead.
@@ -41,25 +41,25 @@ If this session already holds the name, the command returns at once without aski
 When the task needs more than one credential, ask for all of them in one command. The user gets one prompt with a field for each name, instead of one prompt after another:
 
 ```bash
-codello secret request STRIPE_KEY WEBHOOK_SECRET --reason "Testing the billing webhook"
+codello secret request "Stripe key" "Webhook secret" --reason "Testing the billing webhook"
 ```
 
-You can name up to 10. Names this session already holds are answered at once and get no field. Stdout has one line for each name that arrived, the name and its path separated by a tab:
+You can name up to 10. Names this session already holds are answered at once and get no field. Stdout has one line for each name that arrived, the name and its path separated by a tab, so split each line on the tab, not on spaces:
 
 ```
-STRIPE_KEY	~/.codello/uploads/<session>/secrets/<id>-STRIPE_KEY
-WEBHOOK_SECRET	~/.codello/uploads/<session>/secrets/<id>-WEBHOOK_SECRET
+Stripe key	~/.codello/uploads/<session>/secrets/<id>-Stripe_key
+Webhook secret	~/.codello/uploads/<session>/secrets/<id>-Webhook_secret
 ```
 
-The user can send some fields and leave the rest. The command waits until every name is sent, declined, or timed out, then exits 0 when all of them arrived, 3 when any is still open on the user's devices, and 1 otherwise. Read each one with `"$(codello secret get NAME)"`. Before you go on after a non-zero exit, run `codello secret list` to see which names you have.
+The user can send some fields and leave the rest. The command waits until every name is sent, declined, or timed out, then exits 0 when all of them arrived, 3 when any is still open on the user's devices, and 1 otherwise. Read each one with `"$(codello secret get "NAME")"`. Before you go on after a non-zero exit, run `codello secret list` to see which names you have.
 
 ## Use it
 
 Get the value with shell substitution, each time you need it:
 
 ```bash
-GITHUB_TOKEN="$(codello secret get GITHUB_TOKEN)" gh pr create --fill
-curl -H "Authorization: Bearer $(codello secret get STRIPE_TEST_KEY)" https://api.stripe.com/v1/balance
+GITHUB_TOKEN="$(codello secret get "GitHub token")" gh pr create --fill
+curl -H "Authorization: Bearer $(codello secret get "Stripe test key")" https://api.stripe.com/v1/balance
 ```
 
 `codello secret get` writes the raw value to stdout and nothing else. It exits 1 when this session does not hold the name. Run it only inside `$(…)`.
@@ -71,7 +71,7 @@ It refuses with exit 2 when stdout is a terminal, but that protects only a perso
 Check the value's shape before you use it, without printing it. A pasted label or name instead of the key is a common mistake, and a shape check catches it before a confusing API error does:
 
 ```bash
-v="$(codello secret get GITHUB_TOKEN)"; case "$v" in ghp_*|github_pat_*) echo "shape ok, ${#v} chars" ;; *) echo "unexpected shape, ${#v} chars" ;; esac
+v="$(codello secret get "GitHub token")"; case "$v" in ghp_*|github_pat_*) echo "shape ok, ${#v} chars" ;; *) echo "unexpected shape, ${#v} chars" ;; esac
 ```
 
 Check the length, any known prefix, and that it has no spaces. If the shape is wrong, ask again with `--refresh` and say in `--reason` what looked wrong.
@@ -79,7 +79,7 @@ Check the length, any known prefix, and that it has no spaces. If the shape is w
 If the service rejects the secret as wrong, revoked, or expired, ask again with `--refresh`. That asks the user even though the session holds the name, and replaces the held value when they answer:
 
 ```bash
-codello secret request GITHUB_TOKEN --refresh --reason "The token was rejected with 401; it may have expired"
+codello secret request "GitHub token" --refresh --reason "The token was rejected with 401; it may have expired"
 ```
 
 Say in `--reason` why you are asking again.
@@ -111,9 +111,9 @@ Do not retry a decline. The user answered. A declined `--refresh` leaves the old
 | Command | Purpose |
 |---------|---------|
 | `codello secret list` | Names this session holds, one per line |
-| `codello secret request NAME` | Ask the user, or return at once if the session holds `NAME` |
-| `codello secret request NAME1 NAME2 …` | Ask for up to 10 names in one prompt |
-| `codello secret get NAME` | The value, for `$(…)` only |
+| `codello secret request "NAME"` | Ask the user, or return at once if the session holds `NAME`. Name it in plain words, quoted |
+| `codello secret request "NAME 1" "NAME 2" …` | Ask for up to 10 names in one prompt |
+| `codello secret get "NAME"` | The value, for `$(…)` only. Matches regardless of case, spaces, and underscores |
 
 | `secret request` flag | Purpose |
 |------|---------|
