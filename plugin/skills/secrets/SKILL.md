@@ -29,12 +29,29 @@ The command blocks until the user answers. It writes an instruction to stderr, a
 
 ```
 [codello] Got GITHUB_TOKEN. Put the value where it belongs with shell substitution, …
-/Users/eric/.codello/uploads/<session>/secrets/<id>-GITHUB_TOKEN
+~/.codello/uploads/<session>/secrets/<id>-GITHUB_TOKEN
 ```
 
 You do not need the file. Get the value from the session instead.
 
 If this session already holds the name, the command returns at once without asking the user, and says so on stderr.
+
+## Ask for several at once
+
+When the task needs more than one credential, ask for all of them in one command. The user gets one prompt with a field for each name, instead of one prompt after another:
+
+```bash
+codello secret request STRIPE_KEY WEBHOOK_SECRET --reason "Testing the billing webhook"
+```
+
+You can name up to 10. Names this session already holds are answered at once and get no field. Stdout has one line for each name that arrived, the name and its path separated by a tab:
+
+```
+STRIPE_KEY	~/.codello/uploads/<session>/secrets/<id>-STRIPE_KEY
+WEBHOOK_SECRET	~/.codello/uploads/<session>/secrets/<id>-WEBHOOK_SECRET
+```
+
+The user can send some fields and leave the rest. The command waits until every name is sent, declined, or timed out, then exits 0 when all of them arrived, 3 when any is still open on the user's devices, and 1 otherwise. Read each one with `"$(codello secret get NAME)"`. Before you go on after a non-zero exit, run `codello secret list` to see which names you have.
 
 ## Use it
 
@@ -83,7 +100,7 @@ Every ending is explicit and exits non-zero, so you can branch on it:
 | Ending | What it means | What to do |
 |--------|---------------|------------|
 | `Declined` | The user chose not to provide it | Stop asking. Say what you cannot do without it. |
-| `Timed out ..., but the request is still open` (exit 3) | Nobody answered within the window (default 10 minutes, maximum 30). The request stays on the user's devices, and the CLI sets the session to waiting unless it runs inside a subagent | End your turn and do not ask again. When the user sends it, Codello types a line into the session that says how to read it, usually `"$(codello secret get NAME)"`; continue from there. If the output says to set waiting yourself, run the command it gives first. If Codello restarts before the user answers, the request is gone; ask again. |
+| `Timed out ..., but the request is still open` (exit 3) | Nobody answered within the window (default 10 minutes, maximum 30). The request stays on the user's devices, and the CLI sets the session to waiting unless it runs inside a subagent | End your turn and do not ask again. When the user sends it (or each name still open), Codello types a line into the session that says how to read it, usually `"$(codello secret get NAME)"`; continue from there. If the output says to set waiting yourself, run the command it gives first. If Codello restarts before the user answers, the request is gone; ask again. |
 | `Timed out` (exit 1) | Nobody answered, and an older Codello server ended the request | Say you are blocked and what you need; do not loop. |
 | `The session closed` | The session went away while waiting | Nothing to do. |
 
@@ -95,6 +112,7 @@ Do not retry a decline. The user answered. A declined `--refresh` leaves the old
 |---------|---------|
 | `codello secret list` | Names this session holds, one per line |
 | `codello secret request NAME` | Ask the user, or return at once if the session holds `NAME` |
+| `codello secret request NAME1 NAME2 …` | Ask for up to 10 names in one prompt |
 | `codello secret get NAME` | The value, for `$(…)` only |
 
 | `secret request` flag | Purpose |
