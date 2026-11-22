@@ -29,7 +29,7 @@ The command blocks until the user answers. It writes an instruction to stderr, a
 
 ```
 [codello] Got GITHUB_TOKEN. Put the value where it belongs with shell substitution, …
-/Users/eric/.codello/uploads/<session>/secrets/<id>-GITHUB_TOKEN
+~/.codello/uploads/<session>/secrets/<id>-GITHUB_TOKEN
 ```
 
 You do not need the file. Get the value from the session instead.
@@ -47,8 +47,8 @@ codello secret request STRIPE_KEY WEBHOOK_SECRET --reason "Testing the billing w
 You can name up to 10. Names this session already holds are answered at once and get no field. Stdout has one line for each name that arrived, the name and its path separated by a tab:
 
 ```
-STRIPE_KEY	/Users/eric/.codello/uploads/<session>/secrets/<id>-STRIPE_KEY
-WEBHOOK_SECRET	/Users/eric/.codello/uploads/<session>/secrets/<id>-WEBHOOK_SECRET
+STRIPE_KEY	~/.codello/uploads/<session>/secrets/<id>-STRIPE_KEY
+WEBHOOK_SECRET	~/.codello/uploads/<session>/secrets/<id>-WEBHOOK_SECRET
 ```
 
 The user can send some fields and leave the rest. The command waits until every name is sent, declined, or timed out, then exits 0 when all of them arrived, 3 when any is still open on the user's devices, and 1 otherwise. Read each one with `"$(codello secret get NAME)"`. Before you go on after a non-zero exit, run `codello secret list` to see which names you have.
