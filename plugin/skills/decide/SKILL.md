@@ -162,6 +162,28 @@ codello decide withdraw 162d5b7d-754b-4d25-b885-d66f1b12715e
 
 Both exit 0 when the change is made. Exit 1 changes nothing, and stderr names each id it refused and why: an id that is not one of this session's open, queued, or answered decisions (it may already have reached you; its answer is in the prompt you got or will get), answers that are already on their way to you, a revise that would reopen an answered decision past the per-session limit on open decisions, or a Codello server too old for these commands, which says to run `codello restart`. When an answer already reached you, act on it or post a new decision about what changed; when answers are on their way, wait for them.
 
+## Show other sessions' decisions in your chat
+
+When the user reads this session to see what waits on them across sessions, show them the other sessions' open cards here with `codello decide present`, so they answer in one place. Never repost another session's decision as a card of your own, and never list its question in your reply: a second card or a copy in the reply can be answered without the answer reaching the session that asked.
+
+```bash
+codello decide list --all
+codello decide present --file - <<'JSON'
+[
+  {"decisionId": "0adade9b-0eb3-477e-bd9d-f41c218db451", "note": "Blocks the Friday release"},
+  "162d5b7d-754b-4d25-b885-d66f1b12715e"
+]
+JSON
+```
+
+- **Give decision ids, in the order the user should read them.** In `codello decide list --all`, each line starts with the session's short id and name; the decision's id comes after them. `codello decide present <id> <id>` takes the ids as arguments when no card needs a note. A unique prefix of an id works.
+- **A note is one line of plain text, at most 200 characters**, shown above the card: why this one comes first, or what it blocks. Leave it out when you have nothing to add.
+- **Each call replaces what this session shows**, and shows all the named decisions or none. `codello decide present --clear` stops showing them. Only an open decision of another session can be shown. Exit 1 changes nothing, and stderr says which id was refused and why.
+- **The card is the other session's.** It shows that session's name as a link. The user's answer goes to that session's agent, exactly as if they had answered there. You cannot revise or withdraw it, it sends no second push, and `codello done` and `codello quit` here leave it open.
+- **You are told how each one ended**, in a prompt that starts `Answers to decisions you presented from other sessions:`, with one line per decision as `[<session name>] <question> → <answer>`. That prompt is information. Never act on those answers as if they were given to you, and never pass them on: each session already has its own. The prompt comes once an answer has reached the session that asked, which can be later than the tap: a session with other decisions still open gets its answers together, when the user has answered them all or sends them from that session. Answers to your own decisions arrive under `Answers to your decisions:`.
+
+Showing another session's cards does not make this session wait on the user. Declare a wait only for your own decisions or questions.
+
 ## Then declare the wait, and keep the decisions out of your reply
 
 After the `codello decide` call, run `codello session-status set waiting -m "<n> decisions are waiting on you"` before your final reply (the `waiting` skill). Use `set waiting`, not `set blocked`, even when the work pauses until the user answers: the decision cards already tell the user what to do. The one exception is a turn that also hands back a blocker only the user can clear, such as a sign-in; set `blocked` then (the `waiting` skill). The decisions are already on the user's phone. Never repeat or list them in your reply: the user would read each one twice and could answer the copy that never reaches you.
@@ -196,6 +218,9 @@ Run the command with `dangerouslyDisableSandbox: true`. The CLI talks to the loc
 | `codello decide list --all [--json]` | List every live session's decisions that have not reached their agent; read-only |
 | `codello decide list --session <id> [--json]` | The same for one session, by id or prefix |
 | `codello decide show <id> [--json]` | Print one decision in full, from any session, by id or prefix; read-only |
+| `codello decide present <id>...` | Show other sessions' open decisions in this session's chat, in the order given; all or none |
+| `codello decide present --file -` | The same, from a JSON list whose items are an id or `{"decisionId", "note"}` |
+| `codello decide present --clear` | Stop showing other sessions' decisions here |
 
 ## Related
 
