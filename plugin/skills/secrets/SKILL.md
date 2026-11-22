@@ -23,7 +23,7 @@ codello secret request GITHUB_TOKEN --reason "Opening the release PR"
 
 The name is what you use to get the value back later, and the user sees it above the field. Use a short identifier such as `GITHUB_TOKEN` or `STRIPE_TEST_KEY`. `--reason` says what it is for.
 
-If the user has to create or regenerate the credential first, put the creation page in `--reason` with the name and scopes already filled in, for example `https://github.com/settings/tokens/new?scopes=read:org&description=release-bot`. Lead with that link, not with steps for editing an existing credential, which can't be pre-filled.
+If the user has to create or regenerate the credential first, put the creation page in `--reason` with the name and scopes already filled in, for example `https://github.com/settings/tokens/new?scopes=read:org&description=release-bot`. Lead with that link, not with steps for editing an existing credential, which can't be pre-filled. Write the full `https://` address: the reason is Markdown, so a link such as `[Create the key](https://dashboard.stripe.com/apikeys/create)` opens with one tap on the user's phone, and `codello secret request` warns on stderr when the reason holds no `https://` link.
 
 The command blocks until the user answers. It writes an instruction to stderr, and the path of a 0600 file to stdout as its only line:
 
@@ -99,7 +99,7 @@ Do not retry a decline. The user answered. A declined `--refresh` leaves the old
 
 | `secret request` flag | Purpose |
 |------|---------|
-| `--reason <text>` | One line on what the secret is for, shown above the field |
+| `--reason <text>` | What the secret is for, with an `https://` link to the page that creates it, in Markdown, shown above the field |
 | `--refresh` | Ask the user even if the session holds the name, and replace it |
 | `--timeout <seconds>` | How long to wait (default 600, capped at 1800) |
 | `--session <id>` | Target another session; defaults to the one you are running in. `get` and `list` take it too |
