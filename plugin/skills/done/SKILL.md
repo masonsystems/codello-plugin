@@ -39,7 +39,7 @@ Do **not** run `codello done` when any of these is true:
 
 Work of your own that is still running is not a reason to declare a wait: keep working, and run `codello done` when it finishes. In each of the cases above, declare the wait with `codello session-status set waiting -m "<what the user has to do or read>"`, or with `set blocked` when your work cannot continue until the user acts (the `waiting` skill, `/codello:waiting`), end the turn, and say plainly in the reply what is pending. Marking such a session done is worse than saying nothing: it tells them there is nothing to come back for, and the session removes itself a day later.
 
-The host enforces the unanswered-card item. While any decision card or question is unanswered, or the user's answers have not reached you yet, `codello done` and `codello done --failed` are refused, and nothing is recorded. A card or question you post after running `codello done` in the same turn drops that done when the turn ends, and nothing tells you so at that point. Set waiting instead, and run `codello done` again once the answers arrive and nothing is left for the user.
+The host enforces the unanswered-card item. While any decision card, question, or `codello task` is open, or the user's answers have not reached you yet, `codello done` and `codello done --failed` are refused, and nothing is recorded. A card or question you post after running `codello done` in the same turn drops that done when the turn ends, and nothing tells you so at that point. Set waiting instead, and run `codello done` again once the answers arrive and nothing is left for the user.
 
 The same request can end either way. What decides it is what the user still has to take in:
 
