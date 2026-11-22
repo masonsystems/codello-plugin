@@ -66,13 +66,13 @@ codello session-status set blocked -m "Sign in to USAA in Brave on the Mac"
 
 The task is listed with the user's decisions and requests, across every session, with one **Done** button. Say what to do in a few words, starting with the verb. `--where` says where it has to be done: `mac`, `phone`, or `anywhere`, the default; the user picks what to clear by where they are. `--link` is an https page that takes them to the step, if one exists. The command prints the task's id.
 
-- When the user taps **Done**, your next prompt says `Done: <the task>`. Check that it worked before you go on.
+- When the user taps **Done**, your next prompt is the line `The user finished a task you gave them:` followed by `Done: <the task>`. Check that it worked before you go on.
 - When you see it done another way, such as a sign-in that now succeeds, withdraw it with `codello task withdraw <id>` so the user isn't asked twice. `codello task list` shows this session's open tasks.
 - While a task is open, `codello done` and `codello quit` are refused, and the refusal names each open task and its id.
 - A session can have at most 8 open tasks.
 - Post one task per step, never a list of steps in one task. Two steps the user does in two places are two tasks.
 
-If `codello task` exits with an unknown-command error, the host predates tasks: put the step in the `-m` line of the declaration instead.
+If `codello task` prints `error: unknown command 'task'` (the CLI predates tasks) or ``This Codello server does not support `codello task` yet`` (the host does), put the step in the `-m` line of the declaration instead. Never run `codello restart` to get tasks: it restarts the user's host.
 
 ## When to clear it
 
