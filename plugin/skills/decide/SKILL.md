@@ -10,12 +10,18 @@ description: "Post every decision only the user can make in one `codello decide 
 ```
 Answers to your decisions:
 1. The cache key ignores the locale, so French users get English pages. Recommend a… → Add the locale
-2. Two unrelated fixes are on this branch. Recommend shipping them in one PR. → (dismissed)
+2. Two unrelated fixes are on this branch. Recommend shipping them in one PR. → (dismissed by you on iPhone)
 ```
 
 The prompt arrives when the user has answered or dismissed every open decision, when they tap Send answers to send what they have answered so far, or ahead of the next message they type.
 
 An answer the user typed in their own words may be a question or an objection rather than a choice: answer it before you act on that decision.
+
+A dismissed decision says who dismissed it:
+
+- `(dismissed by you on <device>)` or `(dismissed by you)`: the user skipped it. That is their answer. Don't post the decision again unless they ask you to.
+- `(dismissed by Codello: <reason>)`: Codello ended the card without the user, for the reason given. Unless the reason says another card replaced it, post it again if you still need the answer.
+- `(dismissed)`: a decision recorded before Codello kept who dismissed it; the source is unknown. Treat it as the user's Skip.
 
 ## When to use it
 
@@ -106,6 +112,10 @@ The export fix ships Friday.
 
 On the command line, use `--draft "<text>"`. `codello decide revise <id> --draft "<text>"` replaces the draft and drops the user's edits. If the CLI or the Codello server is too old for drafts, the call exits 1, posts nothing, and says so; put the text in `details` instead.
 
+## Fold a decision that settles another into it
+
+The user sees every open card at once, in the order you posted them, and can answer them in any order, or accept every recommended answer in one tap. When one decision's answer depends on another (approve a guide, then where to publish it), put both in one card, or ask the one that settles the other and post the rest after the answer. Otherwise the user answers a card that their answer to the other one makes moot, or asks the later card's question in their answer to the first.
+
 ## Post every decision in one call
 
 Post all of a turn's decisions in one call, with a JSON list on stdin. Each entry has a `question`, and optionally `options` (a list of 1 to 3 strings, or up to 8 with `multiSelect`), `details`, `draft`, `multiSelect`, and `recommended`. The CLI checks every entry before it posts anything, so one bad entry posts none of them; fix it and run the call again. A quoted heredoc keeps the shell from touching the text:
@@ -131,9 +141,11 @@ A lone decision can also go on the command line: `codello decide "<question>" --
 
 ## Keep the ids, and change a decision in place
 
-`codello decide` prints one decision id per line. Keep them: you need an id to change a decision you already posted. If you lost them, `codello decide list` prints each decision of this session that has not reached you yet, one per line with its id, status, and question; `--json` prints the same as JSON. To see other sessions' cards, `codello decide list --all` lists every live session's, and `--session <id or prefix>` one session's, with the session's name and when each card was posted. Those only read: you can revise or withdraw only your own session's decisions.
+`codello decide` prints one decision id per line. Keep them: you need an id to change a decision you already posted. If you lost them, `codello decide list` prints each decision of this session that has not reached you yet, one per line with its id, status, and question; `--json` prints the same as JSON. To see other sessions' cards, `codello decide list --all` lists every live session's, and `--session <id or prefix>` one session's, with the session's name and when each card was posted. To read one card that has not reached its agent yet in full (its question, options, details, draft, and answer or status), run `codello decide show <id>` with its id or the start of it, from any session; once its answer reaches its agent, `show` no longer finds it. Those only read: you can revise or withdraw only your own session's decisions. `codello decide <word> <id>` for a subcommand that doesn't exist is refused and posts nothing.
 
 When you learn something that changes a decision you already posted, change that decision. Never post a new decision that says it replaces, supersedes, or corrects an earlier card: the user would see both cards and could answer the stale one.
+
+A decision that is still open stays on its card until the user answers it. Never post it again on a new card, reworded or not, and not to restate it after other work, a permission approval, or a reply. Before you post, run `codello decide list` and post only the decisions it does not show. If an open decision needs new wording or new facts, revise it in place.
 
 - **To correct or replace a decision**, run `codello decide revise <id>` with the new decision, either as a paragraph with `--options`, `--details`, and `--draft`, or with `--file` holding one entry in the same JSON shape. The card keeps its place and shows a Revised mark. If the user already answered it, the answer is cleared and the decision is open again.
 - **To drop a decision** that no longer matters, run `codello decide withdraw <id>`, with several ids at once if you need. The card disappears.
@@ -148,7 +160,7 @@ JSON
 codello decide withdraw 162d5b7d-754b-4d25-b885-d66f1b12715e
 ```
 
-Both exit 0 when the change is made. Exit 1 changes nothing, and stderr names each id it refused and why: an id that is not one of this session's open or answered decisions (it may already have reached you; its answer is in the prompt you got or will get), answers that are already on their way to you, a revise that would reopen an answered decision past the per-session limit on open decisions, or a Codello server too old for these commands, which says to run `codello restart`. When an answer already reached you, act on it or post a new decision about what changed; when answers are on their way, wait for them.
+Both exit 0 when the change is made. Exit 1 changes nothing, and stderr names each id it refused and why: an id that is not one of this session's open, queued, or answered decisions (it may already have reached you; its answer is in the prompt you got or will get), answers that are already on their way to you, a revise that would reopen an answered decision past the per-session limit on open decisions, or a Codello server too old for these commands, which says to run `codello restart`. When an answer already reached you, act on it or post a new decision about what changed; when answers are on their way, wait for them.
 
 ## Show other sessions' decisions in your chat
 
@@ -185,6 +197,7 @@ When a subagent, a teammate, or a review you are waiting on is still running and
 Run the command with `dangerouslyDisableSandbox: true`. The CLI talks to the local server, which a sandboxed command cannot reach.
 
 - Exit 0 means the host holds every decision. stdout is one decision id per line, in the order you posted them, and nothing else.
+- A session shows at most 8 open decisions, and up to 16 more wait in a queue. Post all of yours in one call anyway; one call takes up to 24, and a call that would put more than 16 in the queue is refused whole. stderr says which opened and which are queued. Each queued one opens on its own, oldest first, when the user answers or skips an open one or you withdraw one, so don't post them again later. `codello decide list` shows them as `queued`, and you can revise or withdraw them like open ones.
 - Exit 1 means nothing was posted, and stderr says why: a bad entry (each one is named), not in a Codello session, Codello not running, or a Codello server too old to take decisions. Fix a bad entry and post again. If the CLI rejects `--file` or `--details` as an unknown option, it is too old for them: post one `codello decide "<question>" --options "..."` per decision instead, and put any text being approved in that question. Otherwise put the decisions in your reply, and say what stopped the command.
 
 ## Options
@@ -204,6 +217,7 @@ Run the command with `dangerouslyDisableSandbox: true`. The CLI talks to the loc
 | `codello decide list [--json]` | List this session's decisions that have not reached you, with their ids |
 | `codello decide list --all [--json]` | List every live session's decisions that have not reached their agent; read-only |
 | `codello decide list --session <id> [--json]` | The same for one session, by id or prefix |
+| `codello decide show <id> [--json]` | Print one decision in full, from any session, by id or prefix; read-only |
 | `codello decide present <id>...` | Show other sessions' open decisions in this session's chat, in the order given; all or none |
 | `codello decide present --file -` | The same, from a JSON list whose items are an id or `{"decisionId", "note"}` |
 | `codello decide present --clear` | Stop showing other sessions' decisions here |
