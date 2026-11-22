@@ -1,5 +1,5 @@
 ---
-description: Schedule a pre-seeded Codello session to fire later in this directory
+description: Schedule a shell command as a Codello job, or a pre-seeded Codello session to fire later in this directory
 argument-hint: <what to do> <when> | list | remove <name>
 allowed-tools: Bash
 ---
@@ -12,6 +12,23 @@ A schedule fires in one of two modes:
 
 - **Background** (`--background`): a headless `claude -p` child process. It has no session row, no viewer, and no permission prompt. It reads the same permission settings files as any Claude Code run in that directory, including `defaultMode`. A tool call that Claude Code denies for a missing allow rule is recorded as a permission denial, and the run is recorded as failed with the denied tool names. When a background run finishes, its final message is its result: the first 200 characters show on the run's row, and the full transcript is on the **Background runs** page and in `codello schedule runs`. A failed run sends a push to the user's phone and a bell notification.
 - **Interactive**: a `claude "<prompt>"` session in a PTY. It shows up in the session list, the user can open it from a phone, and it can stop and ask a question or request a tool permission.
+
+## A command on a schedule: use `codello job add --run`
+
+When the work is a shell command with no agent in it, such as an indexer, a sync, a backup, or a report script, make it a script job, never a launchd plist, a crontab line, or a systemd timer. Codello runs it on the host, keeps every run's exit code and output, and pushes to the user's phone when you add it:
+
+```bash
+codello job add -n <name> -d "<one sentence: what it does and why>" \
+  --run "<command>" --cwd "<dir>" --every 15m   # or --daily 7:30, --cron "<expr>", --at <ISO time>
+```
+
+- `-d` is required. The user reads it on the push and in `codello job list`, so say what the job is for, not how it works.
+- `--every` takes minutes that divide an hour, hours that divide a day, or `1d`. For anything else, use `--cron`.
+- Add `--timeout <minutes>` (60 by default) and `--env NAME=VALUE` as needed. The command runs in the user's login shell.
+- Read the runs with `codello job runs <name>` and a run's output with `codello job runs <name> --output <run id>`. `codello job run <name>` runs it now.
+- If `codello job --help` fails, the installed Codello is too old for script jobs. Tell the user to upgrade it; don't fall back to launchd or cron.
+
+The rest of this command covers agent runs.
 
 `$ARGUMENTS` is the user's request. Handle three shapes:
 
