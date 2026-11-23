@@ -3,7 +3,7 @@ name: waiting
 description: "Run `codello session-status set waiting -m \"<what they can do>\"` at the end of a turn that leaves the user something with no card: a PR to review or merge, findings or a report they have to read. Run `codello session-status set blocked -m \"<what they must do>\"` when work cannot continue until the user acts and no card fits. Never run either after `codello ask`, `codello decide`, or `codello task`: each of those already shows the session waiting and sends the push. Also covers posting a step the user does by hand with `codello task`. Run `codello session-status set working -m \"<what it waits on>\" --until <when>` instead when the turn ends waiting on something that is not the user and that Codello cannot see, such as remote CI or another session's result, and `codello session-status progress <percent>` to show how far it has got. Clear a status with `codello session-status clear`. Also /codello:waiting."
 ---
 
-# Declare that this session is blocked or waiting on the user
+# Declare what this session is waiting on
 
 Codello shows the user a needs-you dot when a turn ends on a question or a permission prompt. It cannot see a wait that you describe in prose, and if anything you started is still running (a `Monitor`, a background `Bash`, a dev server) the session reads as busy however plainly your reply says otherwise, so the user is never told. The declaration replaces the inference.
 
@@ -80,10 +80,11 @@ When the turn ends waiting on something other than the user, and nothing you sta
 codello session-status set working -m "CI run on PR 2087" --until 30m
 ```
 
-- Use it for remote CI with nothing polling it locally, a deploy, another session's result, a scheduled check, or a vendor's or colleague's reply.
+- Use it for something you expect within the hour: remote CI with nothing polling it locally, a deploy, or another session's result.
 - Skip it when your own background command, `Monitor`, or subagent is running: Codello already shows that session as busy, and it wakes you when the work ends.
-- `--until` is required and at most one hour away. At that time Codello types you a prompt to check on the wait; if it is still running, declare it again with a new deadline. A wait more than an hour away is handed off with `codello schedule` and `codello done`, as the `done` skill says.
+- `--until` is required and at most one hour away. At that time Codello types you a prompt to check on the wait. Declare it again only when the thing is still due within the next hour. A wait that runs longer, or is on a person, such as a colleague's or a vendor's reply, is handed off with `codello schedule` and `codello done`, as the `done` skill says.
 - No push goes out and no amber dot shows. A card, question, or task you open keeps its own color and push.
+- `-m` names what you wait on, such as `CI run on PR 2087`. It is not a request to the user.
 - Your next turn, for any reason, clears it. So do `codello session-status clear` and another `set`.
 - The host refuses `codello done` in the same turn as `set working`: you are still waiting on something, so you are not done.
 
@@ -94,7 +95,7 @@ Expect:
 [codello] At 3:40 PM CST Codello wakes this session to check on it. Your next turn, for any reason, clears it.
 ```
 
-If it prints `this host does not support 'working' yet`, end the turn without declaring a status. Never fall back to `set waiting`: that tells the user the wait is theirs.
+If it prints `this host does not support 'working' yet` (the host is older) or `codello: state must be 'waiting' or 'blocked'` (the CLI is older), don't declare a status. Never fall back to `set waiting`: that tells the user the wait is theirs. Instead, start a background command that waits for the thing, such as `gh run watch <run id> --exit-status` with `run_in_background: true`, and end the turn: its end wakes you, and Codello shows the session busy meanwhile.
 
 ### Show progress on the session's circle
 
@@ -103,15 +104,17 @@ If it prints `this host does not support 'working' yet`, end the turn without de
 Post it from a background command that polls the thing, so no turn of yours is spent on it. Start the command with `run_in_background: true` and `dangerouslyDisableSandbox: true`:
 
 ```bash
-while :; do
-  done_jobs=$(gh run view 123456 --json jobs --jq '[.jobs[] | select(.status == "completed")] | length')
-  codello session-status progress $(( done_jobs * 100 / 6 )) -m "$done_jobs of 6 jobs" || true
-  [ "$done_jobs" -ge 6 ] && break
+for _ in $(seq 120); do                      # one hour at most
+  run=$(gh run view 123456 --json status,jobs) || { sleep 30; continue; }
+  total=$(jq '.jobs | length' <<<"$run")
+  finished=$(jq '[.jobs[] | select(.status == "completed")] | length' <<<"$run")
+  [ "$total" -gt 0 ] && codello session-status progress $(( finished * 100 / total )) -m "$finished of $total jobs" || true
+  [ "$(jq -r .status <<<"$run")" = completed ] && break
   sleep 30
 done
 ```
 
-Keep `|| true`: a host that predates progress exits 1 with `This host does not support progress yet`, and the script should go on polling. An agent that checks the thing itself between turns can run the same command after each check instead.
+Keep `|| true`: a host that predates progress exits 1 with `This host does not support progress yet`, and the script should go on polling. A failed `gh` call skips that round instead of posting 0, and the loop stops when the run completes or after an hour. An agent that checks the thing itself between turns can run the same command after each check instead.
 
 After ten minutes with no post the ring turns gray, which tells the user the script stopped. 100 shows a full ring and ends nothing: the wait ends when your next turn starts. Your next turn also clears the progress; a script still running shows it again with its next post.
 
@@ -149,7 +152,7 @@ A task-mode session was started with `codello spawn --task`, and its system prom
 - A `codello ask` question is waiting for the user. Use it for a question, a credential, or access: `codello ask "<question>"`, adding `--options "A|B"` when the choices are known. It waits up to 10 minutes and prints the answer, so give it a tool timeout of at least 600000 ms.
 - `codello decide` cards are open or answered and not yet delivered. Post every decision in one call (the `decide` skill) and end your turn; the answers arrive as your next prompt.
 - A `codello task` is open for a step the user does by hand. End your turn; tapping **Done** arrives as your next prompt.
-- You declared a wait on something other than the user, such as remote CI, a colleague's reply, or a vendor, with `codello session-status set working -m "<who and what you wait for>" --until <at most an hour>`. On a host that refuses `working`, use `codello session-status set waiting` with the same line.
+- You declared a wait on something other than the user that you expect within the hour, such as remote CI, with `codello session-status set working -m "<what you wait for>" --until <at most an hour>`. If `working` is refused, start a background command that waits for it instead, as above. A longer wait, such as a colleague's or a vendor's reply, is a handoff with `codello schedule` and `codello done`.
 - Work you started is still running, such as a subagent, a review, or a background shell. End the turn without declaring anything; its result arrives as your next prompt.
 - `codello done` reported the work. When it leaves something for the user, such as a PR to review, put that action in `--next` (the `done` skill).
 
