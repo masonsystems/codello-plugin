@@ -225,7 +225,8 @@ a question, or a decision means the session ends with an ordinary report instead
 
 An agent asks you for something with exactly one command, and that command alone shows the
 session waiting and sends the push: `codello ask`, `codello decide`, `codello task`, or
-`codello secret request`. It never sets a status after one of them. For something with no card,
+`codello secret request`. It never sets a status after one of them, unless the output of
+`codello secret request` tells it to. For something with no card,
 an agent that ends a turn with its work stopped until you act runs
 `codello session-status set blocked -m "<what you have to do>"`, which shows red like a
 permission prompt, and an agent that ends a turn on something you must read or do runs
