@@ -55,6 +55,25 @@ One declaration per wait. A second `set` replaces the status and the line on the
 
 The declaration fires at the end of the turn. If the user types before the turn ends, the armed declaration is dropped: no dot, no push, because their message may already be the answer. If that message did not answer you, declare again in the next turn.
 
+## Post a step the user must do by hand as a task
+
+When the thing only the user can do happens away from the app, such as signing in to a site in a browser on the Mac, pairing an extension, putting a certificate on a machine, or approving in another app, post it with `codello task` before you declare the wait:
+
+```bash
+codello task "Sign in to USAA in Brave" --where mac --link https://www.usaa.com
+codello session-status set blocked -m "Sign in to USAA in Brave on the Mac"
+```
+
+The task is listed with the user's decisions and requests, across every session, with one **Done** button. Say what to do in a few words, starting with the verb. `--where` says where it has to be done: `mac`, `phone`, or `anywhere`, the default; the user picks what to clear by where they are. `--link` is an https page that takes them to the step, if one exists. The command prints the task's id.
+
+- When the user taps **Done**, your next prompt is the line `The user finished a task you gave them:` followed by `Done: <the task>`. Check that it worked before you go on.
+- When you see it done another way, such as a sign-in that now succeeds, withdraw it with `codello task withdraw <id>` so the user isn't asked twice. `codello task list` shows this session's open tasks.
+- While a task is open, `codello done` and `codello quit` are refused, and the refusal names each open task and its id.
+- A session can have at most 8 open tasks.
+- Post one task per step, never a list of steps in one task. Two steps the user does in two places are two tasks.
+
+If `codello task` prints `error: unknown command 'task'` (the CLI predates tasks) or ``This Codello server does not support `codello task` yet`` (the host does), put the step in the `-m` line of the declaration instead. Never run `codello restart` to get tasks: it restarts the user's host.
+
 ## When to clear it
 
 Run `codello session-status clear` when the wait ends without the user typing in the session:

@@ -247,6 +247,8 @@ codello decide --file - <<'JSON'  # every decision only the user can make, in on
 [{"question": "<what, why, recommendation>", "options": ["<recommended>", "<alternative>"], "draft": "<text the user approves and may edit>"}]
 JSON
 codello decide "<what, why, recommendation>" --options "<recommended>|<alternative>" --details "<markdown>"  # one decision
+codello task "<what to do>" --where mac --link <https url>  # something only the user can do by hand; one Done button (skill: waiting)
+codello task list --all                                  # every session's open tasks; `task withdraw <id>` once you see it done
 codello watch <session>                                  # ask the user to let this session decide another's routine prompts (skill: watch-policy)
 codello permit <id> allow                                # as a watcher, allow one prompt once; `pass` sends it to the user (skill: watch-policy)
 codello secret list                                      # names of the credentials this session holds (skill: secrets)

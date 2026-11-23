@@ -1,6 +1,7 @@
 #!/bin/sh
 # PreToolUse hook on Bash: let an agent run its own `codello session-status`,
-# `codello decide`, and `codello done` without a permission prompt (COD-2549).
+# `codello decide`, `codello done`, and `codello task` without a permission
+# prompt (COD-2549, COD-2734).
 #
 # The plugin tells every agent to run these, and each only reports to the user.
 # An allow rule such as `Bash(codello session-status *)` misses some of them:
