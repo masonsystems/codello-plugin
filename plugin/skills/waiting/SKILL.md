@@ -126,7 +126,17 @@ When the thing only the user can do happens away from the app, such as signing i
 codello task "Sign in to USAA in Brave" --where mac --link https://www.usaa.com
 ```
 
-The task shows the session waiting and sends the push itself, so set no status after it. The task is listed with the user's decisions and requests, across every session, with a **Done** button and, on a current host, **Can't do it**. Say what to do in a few words, starting with the verb. `--where` says where it has to be done: `mac`, `phone`, or `anywhere`, the default; the user picks what to clear by where they are. `--link` is an https page that takes them to the step, if one exists. The command prints the task's id.
+The task shows the session waiting and sends the push itself, so set no status after it. The task is listed with the user's decisions and requests, across every session, with a **Done** button and, on a current host, **Can't do it**. Its text is Markdown. Start with one line that says what to do in a few words, starting with the verb; a hidden card shows only that line. When the task takes several clicks, follow that line with a blank line and a numbered list, one step per line, never a menu path written as a sentence (`Settings > Apps > Edit`):
+
+```bash
+codello task --where mac --link https://github.com/organizations/acme/settings/apps/acme-bot/permissions "$(printf '%s\n' \
+  'Give the acme-bot GitHub App read access to commit statuses' \
+  '' \
+  '1. Under **Repository permissions**, set **Commit statuses** to **Read-only**' \
+  '2. Click **Save changes**')"
+```
+
+`--where` says where it has to be done: `mac`, `phone`, or `anywhere`, the default; the user picks what to clear by where they are. `--link` is an https page that takes them to the first step, if one exists; the card shows it as an **Open** button, so leave the address out of the text. The command prints the task's id.
 
 - When the user taps **Done**, your next prompt is the line `The user finished a task you gave them:` followed by `Done: <the task>`. Check that it worked before you go on.
 - When the user taps **Can't do it**, the task is closed and your next prompt is the line `The user can't do a task you gave them:` followed by `Can't do: <the task>`. Don't post the same task again. Find another way to finish the work, or ask the user what to do next. Any reason they have comes as an ordinary chat message.
@@ -134,7 +144,7 @@ The task shows the session waiting and sends the push itself, so set no status a
 - When you see it done another way, such as a sign-in that now succeeds, withdraw it with `codello task withdraw <id>` so the user isn't asked twice. `codello task list` shows this session's open tasks.
 - While a task is open, `codello done` and `codello quit` are refused, and the refusal names each open task and its id.
 - A session can have at most 8 open tasks.
-- Post one task per step, never a list of steps in one task. Two steps the user does in two places are two tasks.
+- Post one task per thing the user finishes in one place. Steps on one page or in one app are one task with numbered steps; two steps the user does in two places are two tasks.
 
 If `codello task` prints `error: unknown command 'task'` (the CLI predates tasks) or ``This Codello server does not support `codello task` yet`` (the host does), put the step in the `-m` line of `codello session-status set blocked` instead. Never run `codello restart` to get tasks: it restarts the user's host.
 
