@@ -59,7 +59,7 @@ door to the `codello` CLI:
   blockers or questions. Needs a `codello` CLI with the `emergency` command.
 - **SessionStart hook** — in a Codello session, a few lines of context at session start
   name the commands an agent is expected to run on its own (`done`, `done --failed`, `quit`,
-  `session-status set blocked` / `set waiting` / `clear`, `decide`, `secret request`, `message`, `emergency`) and point at the skill
+  `session-status set blocked` / `set waiting` / `clear`, `decide`, `task`, `secret request`, `message`, `emergency`) and point at the skill
   for each.
   Outside a Codello session the hook prints nothing.
 - **PreToolUse hook** — in a Codello session, an agent's own `codello session-status`,
@@ -223,18 +223,22 @@ a question, or a decision means the session ends with an ordinary report instead
 
 ## Say the session is blocked or waiting on you
 
-An agent that ends a turn with its work stopped until you act runs
+An agent asks you for something with exactly one command, and that command alone shows the
+session waiting and sends the push: `codello ask`, `codello decide`, `codello task`, or
+`codello secret request`. It never sets a status after one of them, unless the output of
+`codello secret request` tells it to. For something with no card,
+an agent that ends a turn with its work stopped until you act runs
 `codello session-status set blocked -m "<what you have to do>"`, which shows red like a
-permission prompt. An agent that ends a turn on something you may answer runs
+permission prompt, and an agent that ends a turn on something you must read or do runs
 `codello session-status set waiting -m "<what you can do>"`, which shows amber. Codello infers a session's
 state from hooks, and a session with a `Monitor`, a background task, or a dev server still
 running reads as busy no matter what the agent's reply says, so before this the wait was
 invisible until you opened the session. The declaration outranks the inference: the row shows
 the red blocked or amber waiting status with the agent's line, you get one push carrying it, and nothing the agent
 does afterward moves it. Your reply retires it, as do dismissing the session from the
-dashboard, `codello session-status clear`, and `codello done`. The skill tells the agent to set `blocked` for a sign-in, access or a
-permission it cannot grant, a credential, or a blocker only you can clear, and `waiting` for a
-PR awaiting review, a question or decision, or findings or a report you have to read. It clears the
+dashboard, `codello session-status clear`, and `codello done`. The skill tells the agent to set `blocked` for access or a
+permission it cannot grant, or a blocker only you can clear, and `waiting` for a
+PR awaiting review or findings or a report you have to read. It clears the
 declaration when the wait ends another way, and never runs it in the same turn as `done`. When the
 Codello server or CLI is too old for `blocked`, the agent sets `waiting` with the same line.
 
