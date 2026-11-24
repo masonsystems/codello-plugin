@@ -24,8 +24,8 @@ Raise an emergency when both of these are true:
 
 Never raise one for:
 
-- A blocker or a permission you need. Use `codello session-status set blocked` (the `waiting` skill, `/codello:waiting`).
-- A question or a decision. Use `codello decide` and `codello session-status set waiting` (the `decide` and `waiting` skills).
+- A blocker or a permission you need. Use `codello task` for a step the user does by hand, or `codello session-status set blocked` when no card fits (the `waiting` skill, `/codello:waiting`).
+- A question or a decision. Use `codello decide` (the `decide` skill).
 - A failing test, a broken build, a flaky CI run, or a bug you found that is not hurting anyone yet. Report it in your reply.
 - Finished or failed work. Use `codello done` or `codello done --failed` (the `done` skill, `/codello:done`).
 - Something that was harmful but is already resolved. Tell the user in your reply; an alert after the fact interrupts them for nothing they can act on.

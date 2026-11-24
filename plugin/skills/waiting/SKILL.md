@@ -1,18 +1,35 @@
 ---
 name: waiting
-description: "Run `codello session-status set blocked -m \"<what they must do>\"` at the end of a turn when work cannot continue until the user acts: a sign-in, access or a permission you cannot grant, a credential, a Blocker. Run `codello session-status set waiting -m \"<what they can do>\"` when the turn ends on something else only the user can do: a PR to review or merge, a question or decision, findings or a report they have to read. Clear either with `codello session-status clear`. Also /codello:waiting."
+description: "Run `codello session-status set waiting -m \"<what they can do>\"` at the end of a turn that leaves the user something with no card: a PR to review or merge, findings or a report they have to read. Run `codello session-status set blocked -m \"<what they must do>\"` when work cannot continue until the user acts and no card fits. Never run either after `codello ask`, `codello decide`, or `codello task`: each of those already shows the session waiting and sends the push. Also covers posting a step the user does by hand with `codello task`. Run `codello session-status set working -m \"<what it waits on>\" --until <when>` instead when the turn ends waiting on something that is not the user and that Codello cannot see, such as remote CI or another session's result, and `codello session-status progress <percent>` to show how far it has got. Clear a status with `codello session-status clear`. Also /codello:waiting."
 ---
 
-# Declare that this session is blocked or waiting on the user
+# Declare what this session is waiting on
 
 Codello shows the user a needs-you dot when a turn ends on a question or a permission prompt. It cannot see a wait that you describe in prose, and if anything you started is still running (a `Monitor`, a background `Bash`, a dev server) the session reads as busy however plainly your reply says otherwise, so the user is never told. The declaration replaces the inference.
 
 ```bash
-codello session-status set blocked -m "Sign in to the AWS console so I can read the staging logs"
+codello session-status set blocked -m "Grant my role read access to the staging logs bucket"
 codello session-status set waiting -m "PR ready for review: https://github.com/org/repo/pull/123"
 ```
 
 The command arms the declaration and returns at once. It fires when the current turn ends, exactly as `codello done` does: the session row shows the status with your `-m` line, and one push goes out carrying the same line. A watcher firing does not retire it. While a turn that watcher starts runs, the row shows you working, and the declaration comes back with no second push when that turn ends.
+
+## Ask with one command
+
+Ask the user for something with exactly one command. That command alone shows the session waiting on the row and sends the push, and the wait ends when the user responds:
+
+| You need the user to | Run | Then |
+|---|---|---|
+| Answer before your command can finish | `codello ask` | Wait in the command |
+| Choose or approve something | `codello decide --file -` (the `decide` skill) | End your turn |
+| Do a step by hand, such as signing in or approving on their phone | `codello task "<what to do>"` (below) | End your turn |
+| Provide a credential | `codello secret request` (the `secrets` skill) | Follow the `secrets` skill |
+| Read or do something that has no card, such as a PR to review or a report to read | `codello session-status set waiting -m "<what they must do>"` | End your turn |
+| Act before work can go on, where no card fits | `codello session-status set blocked -m "<what they must do>"` | End your turn |
+
+Never run `set waiting` or `set blocked` after `codello ask`, `codello decide`, or `codello task` to repeat it. A turn that posts cards may still set a status for a different need, such as two decision cards and a PR that is ready for review.
+
+A request written only in your reply reaches nobody: the row shows nothing and no push goes out. Anything the turn leaves for the user goes through one of the commands above.
 
 The two statuses look different on the user's devices:
 
@@ -29,25 +46,25 @@ Report your result to the agent that spawned you and let it decide what the sess
 
 Run it silently in the turn that leaves something only the user can do, before you write the final reply. Never mention the command or the status in the reply: "I've marked this session as waiting on your answer" tells the user nothing they need.
 
-Set `blocked` when your work cannot continue until the user acts:
+Set `blocked` when your work cannot continue until the user acts and no card fits:
 
-- A sign-in, an interactive login, or an MFA prompt.
 - Access or a permission you cannot grant yourself: a denied command, an environment you cannot reach, an account you do not have, a change on a system outside your access.
-- A credential you need and do not hold.
 - You are handing back a **Blocker** item.
 
-Set `waiting` when the user has something to do but your work is not stuck on it:
+A sign-in, an interactive login, or an MFA prompt is a `codello task` (below), and a credential is a `codello secret request` (the `secrets` skill); neither needs a status after it.
+
+Set `waiting` when the user has something to do that has no card, and your work is not stuck on it:
 
 - A pull request is open and needs their review, approval, or merge. One they have already approved, with the merge left to a process they run later, does not.
-- You asked a question, or a decision is theirs to make. Post every decision in one `codello decide --file -` call first (the `decide` skill), with any text being approved in full in its `draft` (or in `details` on a multi-select decision, which takes no `draft`), so the user answers it on their phone, and keep the decisions out of your reply. A turn that posts decisions ends with `set waiting`, or with `set blocked` when it also hands back a blocker (below).
 - The result of the task is something they have to read: findings from an investigation, the answer to a question they left you with, a report, a comparison, a plan, a recommendation. Reading it is the part only they can do, so the task is not done until they have. Say what is ready and lead with the headline, such as `Read: uploads fail on iPad because the picker returns no file. Two fixes compared.` A short answer in a live back-and-forth, where the user is plainly reading along, needs no declaration.
-- You are handing back a **Decision needed** item.
+
+A question or a decision is not a status. Post every decision in one `codello decide --file -` call (the `decide` skill), with any text being approved in full in its `draft` (or in `details` on a multi-select decision, which takes no `draft`), keep the decisions out of your reply, and end the turn.
 
 When both apply, set `blocked`: the user needs to know first that work has stopped.
 
-Never set it for work you started yourself: CI on your own push, a `Monitor` or background command, a deploy, a subagent. When that work finishes you resume on your own, so the user is not the one you are waiting on, and the row would tell them it is their move while you keep working. Codello already shows a session parked on background work as busy. Set it only once something is left for the user, for example when CI is green and the PR is ready for review.
+Never set `waiting` or `blocked` for work you started yourself: CI on your own push, a `Monitor` or background command, a deploy, a subagent. When that work finishes you resume on your own, so the user is not the one you are waiting on, and the row would tell them it is their move while you keep working. Codello already shows a session parked on its own background command, `Monitor`, or subagent as busy. When nothing of yours runs on the host to watch it, declare `set working` instead (below). Set `waiting` only once something is left for the user, for example when CI is green and the PR is ready for review.
 
-The same holds for a subagent, a teammate, or a review whose result you are waiting on, even when you already have something to ask the user. When that result can change what you ask them for, hold the `codello decide` cards and the wait until it arrives, and post both in that turn.
+The same holds for a subagent, a teammate, or a review whose result you are waiting on, even when you already have something to ask the user. When that result can change what you ask them for, hold the `codello decide` cards until it arrives, and post them in that turn.
 
 Never set it, or keep the session open on a timer, for a step of your own more than an hour away, such as a check tomorrow morning. Hand it off as the `done` skill says, then run `codello done`.
 
@@ -55,16 +72,61 @@ One declaration per wait. A second `set` replaces the status and the line on the
 
 The declaration fires at the end of the turn. If the user types before the turn ends, the armed declaration is dropped: no dot, no push, because their message may already be the answer. If that message did not answer you, declare again in the next turn.
 
+## A wait on something that isn't the user: `set working`
+
+When the turn ends waiting on something other than the user, and nothing you started runs on this host to watch it, declare the wait so the row reads Working instead of turning amber:
+
+```bash
+codello session-status set working -m "CI run on PR 2087" --until 30m
+```
+
+- Use it for something you expect within the hour: remote CI with nothing polling it locally, a deploy, or another session's result.
+- Skip it when your own background command, `Monitor`, or subagent is running: Codello already shows that session as busy, and it wakes you when the work ends.
+- `--until` is required and at most one hour away. At that time Codello types you a prompt to check on the wait. Declare it again only when the thing is still due within the next hour. A wait that runs longer, or is on a person, such as a colleague's or a vendor's reply, is handed off with `codello schedule` and `codello done`, as the `done` skill says.
+- No push goes out and no amber dot shows. A card, question, or task you open keeps its own color and push.
+- `-m` names what you wait on, such as `CI run on PR 2087`. It is not a request to the user.
+- Your next turn, for any reason, clears it. So do `codello session-status clear` and another `set`.
+- The host refuses `codello done` in the same turn as `set working`: you are still waiting on something, so you are not done.
+
+Expect:
+
+```
+[codello] Status set to working. When this turn ends the session shows as working, with no dot and no push.
+[codello] At 3:40 PM CST Codello wakes this session to check on it. Your next turn, for any reason, clears it.
+```
+
+If it prints `this host does not support 'working' yet` (the host is older) or `codello: state must be 'waiting' or 'blocked'` (the CLI is older), don't declare a status. Never fall back to `set waiting`: that tells the user the wait is theirs. Instead, start a background command that waits for the thing, such as `gh run watch <run id> --exit-status` with `run_in_background: true`, and end the turn: its end wakes you, and Codello shows the session busy meanwhile.
+
+### Show progress on the session's circle
+
+`codello session-status progress <percent> [-m "<line>"]` fills a ring around the session's circle, with the percent and the line on the row. `progress clear` removes it. It starts no turn, sends no push, and never wakes you, so it can run as often as you like; it prints nothing on success.
+
+Post it from a background command that polls the thing, so no turn of yours is spent on it. Start the command with `run_in_background: true` and `dangerouslyDisableSandbox: true`:
+
+```bash
+for _ in $(seq 120); do                      # one hour at most
+  run=$(gh run view 123456 --json status,jobs) || { sleep 30; continue; }
+  total=$(jq '.jobs | length' <<<"$run")
+  finished=$(jq '[.jobs[] | select(.status == "completed")] | length' <<<"$run")
+  [ "$total" -gt 0 ] && codello session-status progress $(( finished * 100 / total )) -m "$finished of $total jobs" || true
+  [ "$(jq -r .status <<<"$run")" = completed ] && break
+  sleep 30
+done
+```
+
+Keep `|| true`: a host that predates progress exits 1 with `This host does not support progress yet`, and the script should go on polling. A failed `gh` call skips that round instead of posting 0, and the loop stops when the run completes or after an hour. An agent that checks the thing itself between turns can run the same command after each check instead.
+
+After ten minutes with no post the ring turns gray, which tells the user the script stopped. 100 shows a full ring and ends nothing: the wait ends when your next turn starts. Your next turn also clears the progress; a script still running shows it again with its next post.
+
 ## Post a step the user must do by hand as a task
 
-When the thing only the user can do happens away from the app, such as signing in to a site in a browser on the Mac, pairing an extension, putting a certificate on a machine, or approving in another app, post it with `codello task` before you declare the wait:
+When the thing only the user can do happens away from the app, such as signing in to a site in a browser on the Mac, pairing an extension, putting a certificate on a machine, or approving in another app, post it with `codello task` and end the turn:
 
 ```bash
 codello task "Sign in to USAA in Brave" --where mac --link https://www.usaa.com
-codello session-status set blocked -m "Sign in to USAA in Brave on the Mac"
 ```
 
-The task is listed with the user's decisions and requests, across every session, with one **Done** button. Its text is Markdown. Start with one line that says what to do in a few words, starting with the verb; a hidden card shows only that line. When the task takes several clicks, follow that line with a blank line and a numbered list, one step per line, never a menu path written as a sentence (`Settings > Apps > Edit`):
+The task shows the session waiting and sends the push itself, so set no status after it. The task is listed with the user's decisions and requests, across every session, with one **Done** button. Its text is Markdown. Start with one line that says what to do in a few words, starting with the verb; a hidden card shows only that line. When the task takes several clicks, follow that line with a blank line and a numbered list, one step per line, never a menu path written as a sentence (`Settings > Apps > Edit`):
 
 ```bash
 codello task --where mac --link https://github.com/organizations/acme/settings/apps/acme-bot/permissions "$(printf '%s\n' \
@@ -82,7 +144,7 @@ codello task --where mac --link https://github.com/organizations/acme/settings/a
 - A session can have at most 8 open tasks.
 - Post one task per thing the user finishes in one place. Steps on one page or in one app are one task with numbered steps; two steps the user does in two places are two tasks.
 
-If `codello task` prints `error: unknown command 'task'` (the CLI predates tasks) or ``This Codello server does not support `codello task` yet`` (the host does), put the step in the `-m` line of the declaration instead. Never run `codello restart` to get tasks: it restarts the user's host.
+If `codello task` prints `error: unknown command 'task'` (the CLI predates tasks) or ``This Codello server does not support `codello task` yet`` (the host does), put the step in the `-m` line of `codello session-status set blocked` instead. Never run `codello restart` to get tasks: it restarts the user's host.
 
 ## When to clear it
 
@@ -98,14 +160,15 @@ You do not need to clear it when the user replies. Their message, typed in the t
 A task-mode session was started with `codello spawn --task`, and its system prompt says so. Nobody reads its replies, so a turn may end in only these ways; any other turn end is sent back to you to continue:
 
 - A `codello ask` question is waiting for the user. Use it for a question, a credential, or access: `codello ask "<question>"`, adding `--options "A|B"` when the choices are known. It waits up to 10 minutes and prints the answer, so give it a tool timeout of at least 600000 ms.
-- `codello decide` cards are open or answered and not yet delivered. Post every decision in one call (the `decide` skill), run `codello session-status set waiting -m "<what you need>"`, and end your turn; the answers arrive as your next prompt.
-- You declared a wait on someone other than the user, such as a colleague's reply or a vendor, with `codello session-status set waiting -m "<who and what you wait for>"`.
+- `codello decide` cards are open or answered and not yet delivered. Post every decision in one call (the `decide` skill) and end your turn; the answers arrive as your next prompt.
+- A `codello task` is open for a step the user does by hand. End your turn; tapping **Done** arrives as your next prompt.
+- You declared a wait on something other than the user that you expect within the hour, such as remote CI, with `codello session-status set working -m "<what you wait for>" --until <at most an hour>`. If `working` is refused, start a background command that waits for it instead, as above. A longer wait, such as a colleague's or a vendor's reply, is a handoff with `codello schedule` and `codello done`.
 - Work you started is still running, such as a subagent, a review, or a background shell. End the turn without declaring anything; its result arrives as your next prompt.
 - `codello done` reported the work. When it leaves something for the user, such as a PR to review, put that action in `--next` (the `done` skill).
 
 ## Never in the same turn as done
 
-`codello done` retires a declared status before it records its own outcome, so `set blocked` or `set waiting` followed by `done` in one turn leaves the session marked done with the declaration gone. They say opposite things: done means the user can close the session after reading only its `-m` line, blocked and waiting mean something is left for them. Pick one. The `done` skill's rule applies: an open PR, a question, a decision, a follow-up, or a result they have to read means waiting, and work stopped on the user means blocked, not done. After you post `codello decide` cards, set waiting: the host refuses `codello done` while any card or `codello ask` question is unanswered.
+`codello done` retires a declared status before it records its own outcome, so `set blocked` or `set waiting` followed by `done` in one turn leaves the session marked done with the declaration gone. They say opposite things: done means the user can close the session after reading only its `-m` line, blocked and waiting mean something is left for them. Pick one. The `done` skill's rule applies: an open PR, a follow-up, or a result they have to read means waiting, and work stopped on the user means blocked, not done. After you post `codello decide` cards, a `codello ask` question, or a `codello task`, end the turn: the host refuses `codello done` while any of them is open.
 
 ## Write the message for a lock screen
 
@@ -165,7 +228,9 @@ If the command prints anything else, say so in your reply and end the turn norma
 |------|---------|
 | `codello session-status set blocked -m <text>` | Declare that work has stopped until the user acts; `-m` is the one line shown on the row and in the push |
 | `codello session-status set waiting -m <text>` | Declare that the user has something to do; `-m` is the one line shown on the row and in the push |
-| `codello session-status clear` | Withdraw the declaration; the session goes back to what Codello infers |
+| `codello session-status set working -m <text> --until <when>` | Declare a wait on something that is not the user; no dot, no push, and a wake-up at `--until`, at most an hour away |
+| `codello session-status progress <percent> [-m <text>]` | Fill the ring on the session's circle; `progress clear` removes it |
+| `codello session-status clear` | Withdraw the declaration and any progress; the session goes back to what Codello infers |
 
 ## Related
 
