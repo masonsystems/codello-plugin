@@ -1,6 +1,6 @@
 ---
 name: decide
-description: "Post every decision only the user can make in one `codello decide --file -` call, a JSON list read from stdin, with any text the user approves in full in each decision's `draft`, where the user can edit it, and other long material in `details`; then `codello session-status set waiting`. The user answers on their phone, and every answer comes back to you as one prompt. Never list the decisions in your reply, and never write \"see the reply\" in a decision. Needs a `codello` CLI with the `decide` command."
+description: "Post every decision only the user can make in one `codello decide --file -` call, a JSON list read from stdin, with any text the user approves in full in each decision's `draft`, where the user can edit it, and other long material in `details`; then end the turn, since the cards already show the session waiting and send the push. The user answers on their phone, and every answer comes back to you as one prompt. Never list the decisions in your reply, and never write \"see the reply\" in a decision. Needs a `codello` CLI with the `decide` command."
 ---
 
 # Put decisions to the user
@@ -185,15 +185,15 @@ JSON
 - **The card is the other session's.** It shows that session's name as a link. The user's answer goes to that session's agent, exactly as if they had answered there. You cannot revise or withdraw it, it sends no second push, and `codello done` and `codello quit` here leave it open.
 - **You are told how each one ended**, in a prompt that starts `Answers to decisions you presented from other sessions:`, with one line per decision as `[<session name>] <question> → <answer>`. When you no longer manage the session that asked by the time the answer reaches it, and the user did not allow showing that decision, its line says it was answered without the answer. That prompt is information. Never act on those answers as if they were given to you, and never pass them on: each session already has its own. The prompt comes once an answer has reached the session that asked, which can be later than the tap: a session with other decisions still open gets its answers together, when the user has answered them all or sends them from that session. Answers to your own decisions arrive under `Answers to your decisions:`.
 
-Showing another session's cards does not make this session wait on the user. Declare a wait only for your own decisions or questions.
+Showing another session's cards does not make this session wait on the user.
 
-## Then declare the wait, and keep the decisions out of your reply
+## Then end the turn, and keep the decisions out of your reply
 
-After the `codello decide` call, run `codello session-status set waiting -m "<n> decisions are waiting on you"` before your final reply (the `waiting` skill). Use `set waiting`, not `set blocked`, even when the work pauses until the user answers: the decision cards already tell the user what to do. The one exception is a turn that also hands back a blocker only the user can clear, such as a sign-in; set `blocked` then (the `waiting` skill). The decisions are already on the user's phone. Never repeat or list them in your reply: the user would read each one twice and could answer the copy that never reaches you.
+After the `codello decide` call, end the turn. The cards already show the session waiting on the user and send one push for the batch, so never run `codello session-status set waiting` or `set blocked` to repeat them. A turn may still set a status for a different need that has no card, such as a PR that is ready for review (the `waiting` skill). A step the user does by hand, such as a sign-in, is a `codello task`, not a status. The decisions are already on the user's phone. Never repeat or list them in your reply: the user would read each one twice and could answer the copy that never reaches you.
 
 Never run `codello done` in the same turn, even when a task brief says to finish with it. While any decision is unanswered the host refuses `codello done`. Run it after the answers arrive and nothing else is left for the user.
 
-When a subagent, a teammate, or a review you are waiting on is still running and its result can change what you ask, hold the cards and the wait until that result arrives, then post both in that turn.
+When a subagent, a teammate, or a review you are waiting on is still running and its result can change what you ask, hold the cards until that result arrives, then post them in that turn.
 
 ## Reading the result
 

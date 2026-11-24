@@ -236,8 +236,8 @@ The commands that report on the task itself also target this session implicitly,
 has its own skill with the rules for when to run it:
 
 ```bash
-codello session-status set blocked -m "Sign in to AWS"  # work stopped until the user acts; shows red (skill: waiting)
-codello session-status set waiting -m "Review PR #12"   # this turn ends on something the user may answer; shows amber (skill: waiting)
+codello session-status set blocked -m "Grant repo access" # work stopped until the user acts and no card fits; shows red (skill: waiting)
+codello session-status set waiting -m "Review PR #12"   # the user has something with no card to read or do; shows amber (skill: waiting)
 codello session-status clear                             # the wait ended without them replying
 codello done -m "Merged the retry fix"                   # finished, user can close it unread (skill: done)
 codello done --failed -m "Staging DB unreachable"        # could not be done (skill: done)
@@ -246,7 +246,7 @@ codello emergency -m "Prod API 500s; rolled back, failing" # harm happening now 
 codello decide --file - <<'JSON'  # every decision only the user can make, in one call; answers return as one prompt (skill: decide)
 [{"question": "<what, why, recommendation>", "options": ["<recommended>", "<alternative>"], "draft": "<text the user approves and may edit>"}]
 JSON
-codello decide "<what, why, recommendation>" --options "<recommended>|<alternative>" --details "<markdown>"  # one decision
+codello decide "<what, why, recommendation>" --options "<recommended>|<alternative>" --details "<markdown>"  # one decision; decide, task, and ask need no status after them
 codello task "<what to do>" --where mac --link <https url>  # something only the user can do by hand; one Done button (skill: waiting)
 codello task list --all                                  # every session's open tasks; `task withdraw <id>` once you see it done
 codello watch <session>                                  # ask the user to let this session decide another's routine prompts (skill: watch-policy)
