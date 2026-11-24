@@ -27,7 +27,7 @@ A dismissed decision says who dismissed it:
 
 Use it for a decision only the user can make that you would otherwise write into your reply and leave for them to answer in prose. Use `codello ask` instead when you must have the answer before you can do anything else in this turn; it waits for the answer and prints it.
 
-Something only the user can do by hand, away from the app, is not a decision: signing in to a site in a browser on the Mac, pairing an extension, putting a certificate on a machine, approving in another app. Post it with `codello task` (the `waiting` skill), which gives the user one **Done** button, instead of a card whose options are "Done" and "Not yet".
+Something only the user can do by hand, away from the app, is not a decision: signing in to a site in a browser on the Mac, pairing an extension, putting a certificate on a machine, approving in another app. Post it with `codello task` (the `waiting` skill), which gives the user a **Done** button and, on a current host, **Can't do it**, instead of a card whose options are "Done" and "Not yet".
 
 Use it too when a command you need was blocked and only the user can allow it. A request written in your reply reaches nobody: the user reads the card, not the terminal. Ask in plain words what the command does and what it unblocks ("Let me read the failing check from the linter's API, so I can fix the last red check on PR #412?"), and put the exact command in `details`. Never ask the user to "allow the blocked command" with no account of what it does. On November 9, 2026, a session asked twice in its replies for two blocked commands, and the user answered "I don't know what you're asking me."
 
