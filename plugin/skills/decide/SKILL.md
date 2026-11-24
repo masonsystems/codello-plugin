@@ -23,6 +23,8 @@ A dismissed decision says who dismissed it:
 - `(dismissed by Codello: <reason>)`: Codello ended the card without the user, for the reason given. Unless the reason says another card replaced it, post it again if you still need the answer.
 - `(dismissed)`: a decision recorded before Codello kept who dismissed it; the source is unknown. Treat it as the user's Skip.
 
+A decision marked `(discussed)` is not a no and not a skip. The user tapped Discuss, which closes every open card of the session at once, because they want to talk those decisions through with you before answering. The prompt ends with a paragraph saying so. Don't act on a discussed decision and don't post it again right away: in chat, ask what they want to discuss or lay out the trade-offs, and post fresh decision cards only once the discussion settles. `codello decide list` shows such a decision as `discussed`.
+
 ## When to use it
 
 Use it for a decision only the user can make that you would otherwise write into your reply and leave for them to answer in prose. Use `codello ask` instead when you must have the answer before you can do anything else in this turn; it waits for the answer and prints it.
