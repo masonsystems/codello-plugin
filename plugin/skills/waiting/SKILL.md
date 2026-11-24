@@ -126,9 +126,11 @@ When the thing only the user can do happens away from the app, such as signing i
 codello task "Sign in to USAA in Brave" --where mac --link https://www.usaa.com
 ```
 
-The task shows the session waiting and sends the push itself, so set no status after it. The task is listed with the user's decisions and requests, across every session, with one **Done** button. Say what to do in a few words, starting with the verb. `--where` says where it has to be done: `mac`, `phone`, or `anywhere`, the default; the user picks what to clear by where they are. `--link` is an https page that takes them to the step, if one exists. The command prints the task's id.
+The task shows the session waiting and sends the push itself, so set no status after it. The task is listed with the user's decisions and requests, across every session, with a **Done** button and, on a current host, **Can't do it**. Say what to do in a few words, starting with the verb. `--where` says where it has to be done: `mac`, `phone`, or `anywhere`, the default; the user picks what to clear by where they are. `--link` is an https page that takes them to the step, if one exists. The command prints the task's id.
 
 - When the user taps **Done**, your next prompt is the line `The user finished a task you gave them:` followed by `Done: <the task>`. Check that it worked before you go on.
+- When the user taps **Can't do it**, the task is closed and your next prompt is the line `The user can't do a task you gave them:` followed by `Can't do: <the task>`. Don't post the same task again. Find another way to finish the work, or ask the user what to do next. Any reason they have comes as an ordinary chat message.
+- Tasks closed together come in one prompt, one `Done:` or `Can't do:` line each, under `The user closed tasks you gave them:` when they were closed both ways.
 - When you see it done another way, such as a sign-in that now succeeds, withdraw it with `codello task withdraw <id>` so the user isn't asked twice. `codello task list` shows this session's open tasks.
 - While a task is open, `codello done` and `codello quit` are refused, and the refusal names each open task and its id.
 - A session can have at most 8 open tasks.
