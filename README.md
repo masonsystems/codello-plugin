@@ -289,9 +289,7 @@ CLI (`codello hook allow-reporting`), which allows the call only when the whole 
 `session-status`, `decide`, or `done` call: no backtick, no `$` outside single quotes, no
 unquoted `;`, `&`, `|`, `(`, `)`, `<`, or `>`, at most a trailing `2>&1 | tail -N` or `| head -N`, and, for `decide`
 only, one heredoc body. Anything else gets no decision and goes through the normal permission
-flow, and your deny and ask rules still apply. The full rules are in
-[Claude Code hooks](https://github.com/masonsystems/codetogo/blob/main/docs/claude-code-hooks.md)
-in the Codello repository.
+flow, and your deny and ask rules still apply.
 
 The hook does nothing outside a Codello session or when it cannot find `codello`. A `codello`
 CLI older than 1.3.2 has no `hook allow-reporting`; the hook then prints nothing and exits 0,
@@ -307,8 +305,7 @@ In a session Codello started, the host gives the session its own Unix socket and
 
 In a session Codello did not start, such as one from the Claude Desktop app, a `claude` in a terminal, or the editor extension, there are no such variables, so the mod looks for a running host itself. It posts the session's id and working directory to the host's discovery socket, `bridge/ambient.sock` under the Codello config directory (`CODELLO_CONFIG_DIR`, else `~/.codetogo`), and the host answers with a socket and token for that session alone. With no host on the machine that one call fails at once, because the socket file does not exist, and the mod does nothing else; it asks again at the start of each turn, so a host you start later picks the session up. A hello that gets no answer within 1.5 seconds counts as no host, so a wedged host cannot hold up a turn. If the host restarts, the mod notices when its polls fail and, once their backoff tops out after about 13 seconds, asks the discovery socket again. `/clear` starts a new conversation under a new session id, so the mod lets its link go and asks again at the next turn start.
 
-Every hook passes its event on, and a host that is down or refuses a call never fails a turn: a Codello host types the send into the terminal instead. The design and its upgrade path are in [Claude Code's I/O surfaces](https://github.com/masonsystems/codetogo/blob/main/docs/claude-code-io-surfaces.md) in the Codello repository.
-
+Every hook passes its event on, and a host that is down or refuses a call never fails a turn: a Codello host types the send into the terminal instead.
 Check it with `claude plugin validate plugin` and `claude plugin test plugin`.
 
 ## Handoff, resume & compact
