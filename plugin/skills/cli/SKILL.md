@@ -199,6 +199,11 @@ codello send-all --rate-limited -m "Limit's reset. Pick up the PR review."
   succeeds, the others read their ordinary state again, but `send-all --login-expired`
   still reaches them.
 - `idle` — at a prompt, nothing pending.
+- `asleep` — the host put the idle session to sleep. A `codello message` or `codello
+  timer add --session` into it wakes it.
+- `agent-exited` (`AGENT NOT RUNNING` in the table) — the agent quit and left a shell.
+  Nothing typed into it is delivered: `codello message` and `codello timer add
+  --session` refuse it.
 - `error` / `dead` — errored, or the host side is gone.
 - `unknown` — **no detector for this session**, not "fine". Its state was wiped (e.g. by
   a server restart) and nothing has re-established it, so it may well be parked on
