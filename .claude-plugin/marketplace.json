@@ -11,7 +11,7 @@
       "name": "codello",
       "source": "./plugin",
       "description": "Connects Claude Code to Codello, which puts every coding agent on every computer in one list on your desktop and phone. Claude can put decisions and questions on your phone and get your answers back, ask for a credential without it entering the conversation, start or schedule sessions, message other sessions, and mark a session done or waiting on you. Needs the codello CLI or Mac app and a Codello account.",
-      "version": "2.10.44",
+      "version": "2.10.45",
       "license": "MIT"
     }
   ]

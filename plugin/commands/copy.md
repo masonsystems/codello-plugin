@@ -89,6 +89,17 @@ The CLI sends **both** flavors: the converted HTML and a plain-text version deri
 (list items become bullets, table cells stay tab-separated on one row), so a paste into a
 plain editor still reads correctly. You don't pass the text separately.
 
+## Passwords and keys: `--secret` and `--generate`
+
+When the user needs a password, token, or key on their clipboard, never show it in the chat and never use `--md`. Use `--secret`: the chip reads "<label> · ••••••••", never displays the value, and Session info never keeps it. When the host is a Mac, the chip also has **Copy on Mac**, which puts the value on the Mac's clipboard instead of the phone's.
+
+- **A new password:** `codello copy --generate --source "Staging DB password"`. The host makes a random 24-character password (pass a length from 12 to 128, as in `--generate 32`) and copies it without printing it, so it never enters your context. Prefer this whenever the user asks you to make up a password.
+- **A value that already exists:** pass it with `--file` or stdin, never as text, because a command-line argument lands in your transcript and the shell history. For example, `codello copy --secret --file ~/.config/app/token --source "API token"` or `<command that prints it> | codello copy --secret --source "API token"`. One trailing newline is dropped from a file or stdin.
+
+`--secret` is plain text only; with `--md` or `--html` it's an error, and so is `--generate` with text or `--file`. The value goes only to a device whose connection to the host is end-to-end encrypted; any other device's chip says it wasn't sent. The host forgets the value after an hour, or sooner when the chip is dismissed or replaced. If the CLI says the host's Codello is older than `codello copy --secret`, nothing was sent; tell the user to update Codello on the host (Check for Updates in the Mac app, or `codello upgrade`). If it errors with `unknown option '--secret'`, the CLI itself is older; same fix.
+
+Report what the CLI printed, without the value: that a secret chip is waiting, and whether Copy on Mac is offered.
+
 ## Report
 
 On success the CLI prints how many lines went to how many viewers, e.g.

@@ -225,6 +225,8 @@ codello snooze [until-wake|1h|4h|8h|clear]  # stop surfacing this session as wai
 codello push-level only-when-waiting    # push only when this session needs the user (also: follow, muted)
 codello copy --md notes.md              # rich text → the clipboard of the device viewing this session
 codello copy --md notes.md --session <pty-id>   # ...or aim it at another session
+codello copy --generate --source "DB password"  # a new random password as a masked chip; never printed
+codello copy --secret --file key.txt    # an existing secret as a masked chip; pass it by file or stdin, not as text
 ```
 
 `snooze` is for when you've armed a wait Codello can't see — a cron, a CI run, a promised
